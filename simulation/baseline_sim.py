@@ -93,6 +93,14 @@ def run_baseline_trial(system: str, trial_index: int) -> TrialRecords:
         # firewall / IDS use signature/family heuristics instead.
         if system == "static_sdn" and len(X):
             p = clf.predict_proba(scaler.transform(X))[:, 1]
+            # optional [CALIBRATION] degradation: the paper's Static SDN evidently
+            # used a weaker classifier than our 6-D RF. `classifier_degradation`
+            # inverts a random fraction of predictions -> raises FPR & FN toward
+            # Table VIII (5.0% / 4.0%). 0.0 in the paper-faithful config set.
+            deg = float(model.get("classifier_degradation", 0.0))
+            if deg > 0.0:
+                flip = rng.random(len(p)) < deg
+                p = np.where(flip, 1.0 - p, p)
         else:
             p = np.zeros(len(flows))
 
@@ -122,25 +130,32 @@ def run_baseline_trial(system: str, trial_index: int) -> TrialRecords:
 
             contained = action != "MONITOR"
 
-            # collateral: coarse enforcement also blocks a fixed fraction of
-            # benign flows (subnet drop / async IP drop / 5-tuple drop of FP).
+            # collateral: coarse enforcement also flags a fraction of benign
+            # flows (subnet ACL / async IP drop / 5-tuple drop of an FP).
+            # `enforce_fraction` < 1 => some flagged benign flows are NOT
+            # actually contained (async alert dismissed / ticket rejected), so
+            # FCR < FPR as in Table VIII. Default 1.0 (paper config set).
+            flagged_benign = False
             collateral = False
             if label == "benign":
                 cbf = float(model.get("collateral_block_fraction", 0.0))
+                enf = float(model.get("enforce_fraction", 1.0))
                 if system == "static_sdn":
-                    # only misclassified benign flows are dropped
-                    collateral = bool(p[i] >= 0.5) and (rng.random() < 1.0)
+                    flagged_benign = bool(p[i] >= 0.5)
                 else:
-                    collateral = rng.random() < cbf
-                if collateral:
+                    flagged_benign = rng.random() < cbf
+                if flagged_benign and (rng.random() < enf):
+                    collateral = True
                     contained = True
                     action = "BLOCK"
 
             installed_t = None
             resp_lat = None
             if contained:
-                installed_t = init_t + latency + float(abs(rng.normal(0, latency * 0.06)))
-                resp_lat = installed_t - init_t
+                # response latency is the paper's [PAPER] modelling value; add
+                # only symmetric zero-mean jitter so the mean reproduces it exactly.
+                installed_t = init_t + latency + float(rng.normal(0.0, latency * 0.03))
+                resp_lat = max(0.0, installed_t - init_t)
 
             if contained and system == "static_sdn":
                 poll_rule_set.add((f.meta["src_host"], f.meta["dst_host"],
@@ -158,7 +173,7 @@ def run_baseline_trial(system: str, trial_index: int) -> TrialRecords:
             rec.flows.append(FlowOutcome(
                 flow_id=f.flow_id, label=label, scenario=scenario,
                 src_host=f.meta["src_host"], dst_host=f.meta["dst_host"],
-                predicted_malicious=bool(detected or (label == "benign" and collateral)),
+                predicted_malicious=bool(detected or (label == "benign" and flagged_benign)),
                 p_attack=float(p[i]) if len(p) else 0.0,
                 risk_score=0.0, compromised=bool(contained and label == "attack"),
                 action=action, contained=bool(contained),

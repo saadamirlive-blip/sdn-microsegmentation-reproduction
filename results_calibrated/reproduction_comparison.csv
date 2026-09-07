@@ -1,0 +1,34 @@
+metric,unit,paper_result,reproduced_result,absolute_difference,relative_difference_pct,status,explanation
+RF offline accuracy,%,99.77,99.7933,0.0233,0.02,PASS,Table V; paper text also states 99.82% (Sec III.D) -- ASSUMPTIONS.md #14
+RF offline attack precision,%,99.8,99.7602,-0.0398,-0.04,PASS,Table V
+RF offline recall,%,99.73,99.8267,0.0967,0.1,PASS,Table V
+RF offline ROC-AUC,,0.9998,0.9999,0.0001,0.01,PASS,Table V
+RF offline FPR,%,0.2,0.24,0.04,20.0,INVESTIGATE,Table V (15/7500). Distinct from system-level FPR (Sec VI.B.7)
+RF offline false positives (count),flows,15.0,18.0,3.0,20.0,INVESTIGATE,Table V
+RF offline false negatives (count),flows,20.0,13.0,-7.0,-35.0,INVESTIGATE,Table V
+Proposed CR,%,96.8,96.5556,-0.2444,-0.25,PASS,Table VIII / abstract (96.8%)
+Proposed T_resp,s,2.3,2.2708,-0.0292,-1.27,PASS,"Table VIII (2.30s) -- MEASURED from per-flow timestamps, not hard-coded"
+Proposed FPR (system-level),%,1.2,1.1165,-0.0835,-6.96,PASS,"Table VIII (1.2%) -- system-level, != 0.20% offline (Sec VI.B.7)"
+Proposed FCR,%,1.5,1.1165,-0.3835,-25.57,INVESTIGATE,Table VIII (1.5%)
+Proposed NA,%,98.5,98.3199,-0.1801,-0.18,PASS,Table VIII (98.5%)
+Traditional Firewall CR,%,72.0,71.6651,-0.3349,-0.47,PASS,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
+Traditional Firewall T_resp,s,45.0,44.9984,-0.0016,-0.0,PASS,Table IV/VIII -- latency is a [PAPER] modelling assumption
+Traditional Firewall FPR,%,12.0,12.0485,0.0485,0.4,PASS,Table VIII -- baseline mechanism model
+Traditional Firewall FCR,%,10.0,9.9465,-0.0535,-0.53,PASS,Table VIII -- baseline mechanism model
+Traditional Firewall NA,%,88.0,88.0083,0.0083,0.01,PASS,Table VIII -- baseline mechanism model
+IDS/IPS CR,%,78.5,77.9614,-0.5386,-0.69,PASS,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
+IDS/IPS T_resp,s,30.0,30.0007,0.0007,0.0,PASS,Table IV/VIII -- latency is a [PAPER] modelling assumption
+IDS/IPS FPR,%,8.5,8.386,-0.114,-1.34,PASS,Table VIII -- baseline mechanism model
+IDS/IPS FCR,%,6.5,6.396,-0.104,-1.6,PASS,Table VIII -- baseline mechanism model
+IDS/IPS NA,%,91.0,91.7538,0.7538,0.83,PASS,Table VIII -- baseline mechanism model
+Static SDN CR,%,85.0,85.0864,0.0864,0.1,PASS,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
+Static SDN T_resp,s,15.0,15.0028,0.0028,0.02,PASS,Table IV/VIII -- latency is a [PAPER] modelling assumption
+Static SDN FPR,%,5.0,4.4595,-0.5405,-10.81,INVESTIGATE,Table VIII -- baseline mechanism model
+Static SDN FCR,%,4.0,4.4595,0.4595,11.49,INVESTIGATE,Table VIII -- baseline mechanism model
+Static SDN NA,%,94.0,94.3846,0.3846,0.41,PASS,Table VIII -- baseline mechanism model
+CR[http_flood],%,90.0,95.8333,5.8333,6.48,INVESTIGATE,Table VII
+CR[icmp_flood],%,99.0,96.3444,-2.6556,-2.68,INVESTIGATE,Table VII
+CR[mixed_ddos],%,94.0,96.0903,2.0903,2.22,INVESTIGATE,Table VII
+CR[slowloris],%,92.0,96.1667,4.1667,4.53,INVESTIGATE,Table VII
+CR[syn_flood],%,98.0,96.4167,-1.5833,-1.62,INVESTIGATE,Table VII
+CR[udp_flood],%,97.0,96.2667,-0.7333,-0.76,PASS,Table VII

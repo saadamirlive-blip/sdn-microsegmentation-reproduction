@@ -94,10 +94,22 @@ cd /vagrant
 
 ---
 
+## 3b. Two config sets: `paper` (reproduction) vs `calibrated` (fit)
+
+| Set | Command | Output | What it is |
+|---|---|---|---|
+| **`paper`** (default) | `python run_experiment.py` | `results/`, `figures/` | the **scientific reproduction** — every unspecified value is a documented `[ASSUMPTION]` never adjusted toward the paper's numbers |
+| **`calibrated`** | `python run_experiment.py --config-set calibrated` | `results_calibrated/`, `figures_calibrated/` | a **deliberate fit** — the same `[ASSUMPTION]` parameters tuned until the output matches Table VII/VIII. **Not** a reproduction. See **`CALIBRATION.md`**. |
+
+The calibrated set deep-merges the tiny overlays `config/experiment.calibrated.yaml`
++ `config/ml_config.calibrated.yaml` (only the changed keys, each annotated with
+the metric it moves). It never overwrites `results/`.
+
 ## 4. Run the whole experiment (one command)
 
 ```bash
-python run_experiment.py
+python run_experiment.py                       # paper-faithful reproduction
+python run_experiment.py --config-set calibrated   # the fitted variant
 ```
 
 This executes, in order (task brief §28):
@@ -213,6 +225,24 @@ generative distributions for only 2 of the 6 flow features (`ASSUMPTIONS.md #6`)
 ```bash
 pip install pytest
 pytest -q
+```
+
+## 9b. Running it on GitHub (CI)
+
+Two workflows under `.github/workflows/`:
+
+| Workflow | Runner | What it does |
+|---|---|---|
+| **`reproduce.yml`** | `ubuntu-latest`, Python 3.10 + paper pins | full pure-Python pipeline for **both** config sets + `pytest`; prints both comparison tables to the run summary; uploads `results*/` + `figures*/` as artifacts. Runs on every push / PR. |
+| **`testbed.yml`** | `ubuntu-22.04` | best-effort **real Mininet + OVS + Ryu (OF 1.3) + Scapy + hping3** run of `scripts/run_testbed.sh`; uploads the live telemetry. `continue-on-error` (Ryu on 3.10 is fragile in CI). Manual / path-triggered. |
+
+To run it in your own GitHub repo:
+
+```bash
+git remote add origin git@github.com:<you>/sdn-microseg-reproduction.git
+git push -u origin main
+# GitHub Actions -> "reproduce" runs automatically;
+# trigger "testbed (Mininet + Ryu)" manually from the Actions tab.
 ```
 
 ---

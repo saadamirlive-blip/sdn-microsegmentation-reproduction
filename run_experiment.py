@@ -24,18 +24,28 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import time
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--trials", type=int, default=None, help="override Monte Carlo trial count")
-    ap.add_argument("--skip-train", action="store_true", help="reuse results/model/model.pkl")
+    ap.add_argument("--skip-train", action="store_true", help="reuse the trained model")
     ap.add_argument("--skip-plots", action="store_true")
     ap.add_argument("--systems", nargs="+", default=None)
+    ap.add_argument("--config-set", choices=["paper", "calibrated"], default="paper",
+                    help="'paper' = faithful reproduction (default); "
+                         "'calibrated' = fitted model, writes to results_calibrated/ (see CALIBRATION.md)")
     args = ap.parse_args()
 
+    # must be set BEFORE common.config is imported anywhere
+    os.environ["SDN_CONFIG_SET"] = args.config_set
+
     t0 = time.time()
+    if args.config_set != "paper":
+        print(f"\n*** CONFIG SET = {args.config_set!r} -- this is a CALIBRATED fit, "
+              f"NOT the scientific reproduction. Output -> results_{args.config_set}/ ***")
 
     # 1 -----------------------------------------------------------------
     print("\n=== [1/9] verify environment ===")

@@ -14,6 +14,14 @@ results/model/
 results/run_all_trials_summary.json
 results/testbed/
 
+# calibrated config set (SDN_CONFIG_SET=calibrated): keep the summary CSVs +
+# figures for review, drop the bulky bits (regenerate with
+# `python run_experiment.py --config-set calibrated`)
+results_calibrated/dataset_50k.csv
+results_calibrated/logs/
+results_calibrated/model/
+results_calibrated/run_all_trials_summary.json
+
 # A committed snapshot of the headline outputs IS kept for review:
 #   results/reproduction_comparison.csv  results/aggregate_results.csv
 #   results/raw_trial_results.csv        results/*.json  results/*.txt

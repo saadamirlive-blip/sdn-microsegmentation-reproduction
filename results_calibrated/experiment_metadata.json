@@ -4,10 +4,10 @@
     "author": "Muhammad Saad Amir",
     "file": "Research_paper (18).pdf"
   },
-  "experiment_date_utc": "2026-09-07T14:06:50.769485+00:00",
+  "experiment_date_utc": "2026-09-07T14:06:53.228109+00:00",
   "git_commit": "487a1e745b950e265778881b1686f472cce28940",
-  "config_set": "paper",
-  "reproduction_task": "reproduction (not a redesign)",
+  "config_set": "calibrated",
+  "reproduction_task": "CALIBRATED FIT -- not a reproduction (see CALIBRATION.md)",
   "environment_paper_specified": {
     "operating_system": "Ubuntu 22.04 LTS",
     "linux_kernel": "5.15",
@@ -175,7 +175,7 @@
     "w2": 0.1,
     "w3": 0.05,
     "risk_threshold": 60.0,
-    "risk_suspected_threshold": 35.0
+    "risk_suspected_threshold": 18.0
   },
   "policy_constants": {
     "policy_mode_default": "hybrid",

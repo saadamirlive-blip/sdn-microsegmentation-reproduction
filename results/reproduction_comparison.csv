@@ -11,18 +11,18 @@ Proposed T_resp,s,2.3,2.4661,0.1661,7.22,PASS,"Table VIII (2.30s) -- MEASURED fr
 Proposed FPR (system-level),%,1.2,0.3835,-0.8165,-68.04,INVESTIGATE,"Table VIII (1.2%) -- system-level, != 0.20% offline (Sec VI.B.7)"
 Proposed FCR,%,1.5,0.308,-1.192,-79.47,INVESTIGATE,Table VIII (1.5%)
 Proposed NA,%,98.5,99.6506,1.1506,1.17,PASS,Table VIII (98.5%)
-Traditional Firewall CR,%,72.0,63.4182,-8.5818,-11.92,INVESTIGATE,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
-Traditional Firewall T_resp,s,45.0,47.1524,2.1524,4.78,INVESTIGATE,Table IV/VIII -- latency is a [PAPER] modelling assumption
-Traditional Firewall FPR,%,12.0,12.0275,0.0275,0.23,PASS,Table VIII -- baseline mechanism model
-Traditional Firewall FCR,%,10.0,12.0275,2.0275,20.27,INVESTIGATE,Table VIII -- baseline mechanism model
-Traditional Firewall NA,%,88.0,83.2853,-4.7147,-5.36,INVESTIGATE,Table VIII -- baseline mechanism model
-IDS/IPS CR,%,78.5,70.3989,-8.1011,-10.32,INVESTIGATE,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
-IDS/IPS T_resp,s,30.0,31.437,1.437,4.79,INVESTIGATE,Table IV/VIII -- latency is a [PAPER] modelling assumption
-IDS/IPS FPR,%,8.5,7.4605,-1.0395,-12.23,INVESTIGATE,Table VIII -- baseline mechanism model
-IDS/IPS FCR,%,6.5,7.4605,0.9605,14.78,INVESTIGATE,Table VIII -- baseline mechanism model
-IDS/IPS NA,%,91.0,88.8263,-2.1737,-2.39,INVESTIGATE,Table VIII -- baseline mechanism model
+Traditional Firewall CR,%,72.0,63.4344,-8.5656,-11.9,INVESTIGATE,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
+Traditional Firewall T_resp,s,45.0,44.991,-0.009,-0.02,PASS,Table IV/VIII -- latency is a [PAPER] modelling assumption
+Traditional Firewall FPR,%,12.0,12.0035,0.0035,0.03,PASS,Table VIII -- baseline mechanism model
+Traditional Firewall FCR,%,10.0,12.0035,2.0035,20.04,INVESTIGATE,Table VIII -- baseline mechanism model
+Traditional Firewall NA,%,88.0,83.2859,-4.7141,-5.36,INVESTIGATE,Table VIII -- baseline mechanism model
+IDS/IPS CR,%,78.5,70.1921,-8.3079,-10.58,INVESTIGATE,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
+IDS/IPS T_resp,s,30.0,30.0012,0.0012,0.0,PASS,Table IV/VIII -- latency is a [PAPER] modelling assumption
+IDS/IPS FPR,%,8.5,7.552,-0.948,-11.15,INVESTIGATE,Table VIII -- baseline mechanism model
+IDS/IPS FCR,%,6.5,7.552,1.052,16.18,INVESTIGATE,Table VIII -- baseline mechanism model
+IDS/IPS NA,%,91.0,88.7551,-2.2449,-2.47,INVESTIGATE,Table VIII -- baseline mechanism model
 Static SDN CR,%,85.0,86.9329,1.9329,2.27,INVESTIGATE,Table VIII -- baseline mechanism model (ASSUMPTIONS.md #17)
-Static SDN T_resp,s,15.0,15.7186,0.7186,4.79,INVESTIGATE,Table IV/VIII -- latency is a [PAPER] modelling assumption
+Static SDN T_resp,s,15.0,15.0013,0.0013,0.01,PASS,Table IV/VIII -- latency is a [PAPER] modelling assumption
 Static SDN FPR,%,5.0,0.4095,-4.5905,-91.81,INVESTIGATE,Table VIII -- baseline mechanism model
 Static SDN FCR,%,4.0,0.4095,-3.5905,-89.76,INVESTIGATE,Table VIII -- baseline mechanism model
 Static SDN NA,%,94.0,98.5641,4.5641,4.86,INVESTIGATE,Table VIII -- baseline mechanism model

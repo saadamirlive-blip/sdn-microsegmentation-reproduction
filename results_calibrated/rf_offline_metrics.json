@@ -1,0 +1,55 @@
+{
+  "test_samples": 15000,
+  "test_normal": 7500,
+  "test_attack": 7500,
+  "accuracy": 0.9979333333333333,
+  "attack_precision": 0.997601598934044,
+  "recall": 0.9982666666666666,
+  "roc_auc": 0.9999370133333333,
+  "confusion": {
+    "true_normal": 7482,
+    "false_positive": 18,
+    "false_negative": 13,
+    "true_attack": 7487
+  },
+  "fpr_offline": 0.0024,
+  "fnr_offline": 0.0017333333333333333,
+  "per_scenario": {
+    "benign": {
+      "n": 7500,
+      "flagged_malicious_pct": 0.24
+    },
+    "http_flood": {
+      "n": 413,
+      "detected_pct": 99.27360774818402
+    },
+    "icmp_flood": {
+      "n": 1109,
+      "detected_pct": 100.0
+    },
+    "mixed_ddos": {
+      "n": 851,
+      "detected_pct": 99.29494712103408
+    },
+    "slowloris": {
+      "n": 582,
+      "detected_pct": 99.3127147766323
+    },
+    "syn_flood": {
+      "n": 2678,
+      "detected_pct": 100.0
+    },
+    "udp_flood": {
+      "n": 1867,
+      "detected_pct": 100.0
+    }
+  },
+  "feature_importance_reproduced": {
+    "pps": 0.27317389812174175,
+    "bps": 0.2994921568531329,
+    "duration": 0.19218210033423874,
+    "tcp_ratio": 0.06850363396748256,
+    "udp_ratio": 0.12727948137054992,
+    "icmp_ratio": 0.03936872935285424
+  }
+}

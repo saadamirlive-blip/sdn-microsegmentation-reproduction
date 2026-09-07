@@ -40,7 +40,18 @@ def _run_trial(system: str, k: int):
     return run_proposed_trial(k) if system == "proposed_dynamic_sdn" else run_baseline_trial(system, k)
 
 
+_SYS_SHORT = {"proposed_dynamic_sdn": "prop", "traditional_firewall": "fw",
+              "ids_ips": "ids", "static_sdn": "ssdn"}
+
+
 def _write_flow_log(rec, path):
+    try:
+        _do_write_flow_log(rec, path)
+    except OSError as e:  # e.g. Windows MAX_PATH on a very deep checkout
+        print(f"  [run_all_trials] flow log skipped ({path.name}): {e}")
+
+
+def _do_write_flow_log(rec, path):
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["flow_id", "trial", "system", "label", "scenario", "src_host", "dst_host",
@@ -61,7 +72,7 @@ def _write_flow_log(rec, path):
 def run(systems: List[str], n_trials: int, write_logs: bool = True) -> Dict:
     rdir = config.results_dir()
     logdir = rdir / "logs"
-    logdir.mkdir(exist_ok=True)
+    logdir.mkdir(parents=True, exist_ok=True)
 
     raw_rows: List[dict] = []
     per_system_metrics: Dict[str, List[TrialMetrics]] = {s: [] for s in systems}
@@ -74,7 +85,7 @@ def run(systems: List[str], n_trials: int, write_logs: bool = True) -> Dict:
             per_system_metrics[system].append(m)
             raw_rows.append(m.to_row())
             if write_logs:
-                _write_flow_log(rec, logdir / f"flows_{system}_trial{k}.csv")
+                _write_flow_log(rec, logdir / f"flows_{_SYS_SHORT.get(system, system)}_t{k}.csv")
             if system not in na_timelines:
                 na_timelines[system] = [availability_timeline(rec.availability)]
             else:
@@ -145,8 +156,8 @@ def run(systems: List[str], n_trials: int, write_logs: bool = True) -> Dict:
                             **{f"fcr_{k}": v for k, v in m.fcr_breakdown.items()}})
     pd.DataFrame(fc_rows).to_csv(rdir / "false_containment.csv", index=False)
 
-    print("\n[run_all_trials] wrote raw/aggregate/latency/containment/availability/"
-          "false_containment CSVs to results/")
+    print(f"\n[run_all_trials] wrote raw/aggregate/latency/containment/availability/"
+          f"false_containment CSVs to {rdir}")
     return {"aggregate": agg.to_dict(orient="records"),
             "per_system_metrics": {s: [asdict(m) for m in ms]
                                    for s, ms in per_system_metrics.items()}}

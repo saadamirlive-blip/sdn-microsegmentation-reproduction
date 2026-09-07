@@ -1,0 +1,22 @@
+Random Forest -- OFFLINE classification performance (Table V)
+================================================================
+
+              precision    recall  f1-score   support
+
+      normal     0.9983    0.9976    0.9979      7500
+      attack     0.9976    0.9983    0.9979      7500
+
+    accuracy                         0.9979     15000
+   macro avg     0.9979    0.9979    0.9979     15000
+weighted avg     0.9979    0.9979    0.9979     15000
+
+
+Confusion matrix [rows=true, cols=pred], labels [normal, attack]:
+  TN=7482  FP=18
+  FN=13  TP=7487
+
+Accuracy      : 99.79%
+Attack Prec.  : 99.76%
+Recall (TPR)  : 99.83%
+ROC-AUC       : 0.9999
+Offline FPR   : 0.24%  (18 / 7500)

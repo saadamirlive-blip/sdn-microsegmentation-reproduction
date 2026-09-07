@@ -38,7 +38,9 @@ def build() -> dict:
         },
         "experiment_date_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": config.git_commit(),
-        "reproduction_task": "reproduction (not a redesign)",
+        "config_set": config.config_set(),
+        "reproduction_task": ("reproduction (not a redesign)" if config.config_set() == "paper"
+                              else "CALIBRATED FIT -- not a reproduction (see CALIBRATION.md)"),
 
         "environment_paper_specified": {
             "operating_system": env["operating_system"],

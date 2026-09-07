@@ -1,0 +1,64 @@
+# =============================================================================
+# experiment.calibrated.yaml  --  OVERLAY for SDN_CONFIG_SET=calibrated
+# =============================================================================
+# DEEP-MERGED onto config/experiment.yaml. Contains ONLY the [ASSUMPTION] keys
+# that were CALIBRATED so the system-level output lands on the paper's reported
+# operating point (Table VIII: CR 96.8 / T_resp 2.30 / FPR 1.2 / FCR 1.5 / NA 98.5).
+#
+# THIS IS NOT A REPRODUCTION. It is a fit. Every value here overrides an
+# [ASSUMPTION] the paper never specified -- see CALIBRATION.md.
+# No [PAPER] value is touched; `paper_*` reference keys are inherited unchanged.
+# =============================================================================
+
+runtime_traffic:
+  benign_bursty_fraction_runtime: 0.48        # was 0.25  -> system FPR up toward 1.2%
+  hit_and_run_fraction: 0.048                 # was 0.06  -> CR toward 96.8
+  latency_model:
+    extraction_time_s: {mean: 0.20, std: 0.05}    # was 0.30/0.08  -> T_resp toward 2.30
+    install_time_s:
+      BLOCK:      {mean: 0.40, std: 0.09}          # was 0.45/0.10
+      QUARANTINE: {mean: 0.58, std: 0.13}          # was 0.70/0.15
+      RATE_LIMIT: {mean: 0.85, std: 0.17}          # was 1.00/0.20
+      MONITOR:    {mean: 0.15, std: 0.04}
+
+risk_engine:
+  # FCR is extremely sensitive to this threshold (a benign host tipping to
+  # Compromised quarantines all its flows). We do NOT push it low enough to
+  # force FCR to 1.5% because that regime has ~10x run-to-run variance -- an
+  # unstable fit, not a calibration. Result: FCR ~1.1% (vs paper 1.5%).
+  risk_suspected_threshold: 18.0             # was 35.0  -> more benign hosts reach Suspected -> FCR up
+  host_collateral_on_compromise: false
+
+# A rate-limited legitimate connection (100 Kbps) is not "fully functional":
+# weight it toward unavailability so NA drops from ~99.7% toward 98.5%.
+availability:
+  rate_limit_impairment_weight: 1.0         # [CALIBRATION] 0.0 in the paper config set
+  transient_degrade_factor: 0.35
+
+baseline_models:
+  traditional_firewall:
+    per_vector_detection_prob:
+      syn_flood: 0.90
+      udp_flood: 0.90
+      icmp_flood: 0.93
+      mixed_ddos: 0.78
+      slowloris: 0.12
+      http_flood: 0.18
+    collateral_block_fraction: 0.120          # -> FPR ~12%
+    enforce_fraction: 0.83                    # -> FCR ~10% (< FPR, as Table VIII)
+    transient_degrade_factor: 0.15            # -> NA toward 88%
+  ids_ips:
+    per_vector_detection_prob:
+      syn_flood: 0.975
+      udp_flood: 0.965
+      icmp_flood: 0.975
+      mixed_ddos: 0.94
+      slowloris: 0.60
+      http_flood: 0.68
+    collateral_block_fraction: 0.085          # -> FPR ~8.5%
+    enforce_fraction: 0.76                    # -> FCR ~6.5%
+    transient_degrade_factor: 0.17            # -> NA toward 91%
+  static_sdn:
+    classifier_degradation: 0.034             # weaker classifier -> FPR ~5%
+    enforce_fraction: 0.68                    # -> FCR ~4%
+    transient_degrade_factor: 0.05            # -> NA toward 94%

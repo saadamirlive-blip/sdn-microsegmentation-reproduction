@@ -35,6 +35,14 @@ _N_BENIGN = int(_EXP["runtime_traffic"]["benign_flows_per_poll"])         # [ASS
 _N_ATTACK = int(_EXP["runtime_traffic"]["attack_flows_per_poll"])        # [ASSUMPTION]
 _LAT = _EXP["runtime_traffic"]["latency_model"]
 _PROBE_ENABLED = bool(_EXP["attack_vectors"]["horizontal_probe"]["enabled"])
+# weight of a rate-limited legitimate connection toward "unavailable"
+# (0.0 = paper-faithful config set; > 0 only in the calibrated overlay)
+_RL_IMPAIR = float(_EXP.get("availability", {}).get("rate_limit_impairment_weight", 0.0))
+_TRANSIENT_FACTOR = float(_EXP.get("availability", {}).get("transient_degrade_factor", 0.35))
+# Algorithm 1 marks the HOST x_i=2 and enforcement follows the host. When this
+# is on, a benign flow on a Compromised host is quarantined too (host-level
+# collateral) -> FCR can exceed FPR as in Table VIII. 0/off in the paper set.
+_HOST_COLLATERAL = bool(_EXP.get("risk_engine", {}).get("host_collateral_on_compromise", False))
 
 
 def _load_predict_proba() -> Callable[[np.ndarray], np.ndarray]:
@@ -126,11 +134,20 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
                 compromised_hosts.add(d.src_host)
 
         down_paths = set()
+        impaired_paths: set = set()
         uncontained_attack_this_poll = 0
 
         for f, d in zip(flows, res.decisions):
             action_name = ACTION_NAME[d.action]
             contained = d.action != Action.MONITOR
+
+            # host-level collateral: a benign flow sharing a Compromised host is
+            # swept up by the host quarantine even though the flow itself looked
+            # clean (Algorithm 1 marks the host, not the flow). Calibrated set only.
+            if (_HOST_COLLATERAL and not contained and f.meta["label"] == "benign"
+                    and d.compromised):
+                contained = True
+                action_name = "QUARANTINE"
 
             init_t = float(f.meta["init_time_s"])
             life = float(f.meta["lifetime_s"])
@@ -155,6 +172,11 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
             collateral = (f.meta["label"] == "benign" and contained)
             if collateral and action_name in ("BLOCK", "QUARANTINE"):
                 down_paths.add((d.src_host, d.dst_host))
+            elif collateral and action_name == "RATE_LIMIT" and _RL_IMPAIR > 0:
+                # a legitimate business connection throttled to 100 Kbps is not
+                # "fully functional" -- weight it toward unavailability.
+                # [ASSUMPTION/CALIBRATION] weight is 0.0 in the paper config set.
+                impaired_paths.add((d.src_host, d.dst_host))
 
             rec.flows.append(FlowOutcome(
                 flow_id=f.flow_id, label=f.meta["label"], scenario=f.meta["scenario"],
@@ -171,8 +193,9 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
             ))
 
         # --- availability sample for this tick (Eq 8 / Fig 7) -----------------
-        # persistent loss: legit paths quarantined/blocked this poll
-        persistent_down = len(down_paths)
+        # persistent loss: legit paths quarantined/blocked this poll (+ weighted
+        # rate-limited paths when _RL_IMPAIR > 0, calibrated set only)
+        persistent_down = len(down_paths) + _RL_IMPAIR * len(impaired_paths)
         # transient loss: un-contained attack burst saturates the attacker's
         # edge switch (s1); a fraction of the 156 paths transiting s1 degrade
         # for this single 3 s tick, then recover (Sec VI.B.3 "transient dips").
@@ -181,9 +204,9 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
             s1_paths = sum(1 for (u, v) in topo.directed_host_pairs()
                            if "s1" in topo.path_switches(u, v))
             sat = min(1.0, uncontained_attack_this_poll / max(1, _N_ATTACK))
-            transient_down = int(round(0.35 * sat * s1_paths))   # [ASSUMPTION] 35% degrade at full saturation
+            transient_down = int(round(_TRANSIENT_FACTOR * sat * s1_paths))  # [ASSUMPTION]
 
-        operational = max(0, total_paths - persistent_down - transient_down)
+        operational = max(0.0, total_paths - persistent_down - transient_down)
         rec.availability.append(PathAvailabilitySample(
             t_s=t, operational_paths=operational, total_paths=total_paths, under_attack=atk,
         ))
