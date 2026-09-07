@@ -1,0 +1,17 @@
+# =============================================================================
+# requirements-testbed.txt -- extra deps for the REAL Mininet/Ryu testbed
+# Ubuntu 22.04 LTS only. Install AFTER requirements.txt, inside a py3.10 venv.
+# =============================================================================
+#
+#   sudo apt-get install -y mininet openvswitch-switch openvswitch-common \
+#                           iperf3 hping3 python3.10-venv
+#   python3.10 -m venv .venv && . .venv/bin/activate
+#   pip install -r requirements.txt -r requirements-testbed.txt
+#
+# Mininet 2.3.0 itself is installed from apt (package `mininet`) or from source
+# (`git clone https://github.com/mininet/mininet && util/install.sh -n`), NOT pip.
+# -----------------------------------------------------------------------------
+
+ryu==4.34               # [ASSUMPTION -- ASSUMPTIONS.md #1]
+eventlet==0.30.2        # Ryu 4.34 needs an older eventlet on Python 3.10
+scapy==2.5.0            # [PAPER] Table III

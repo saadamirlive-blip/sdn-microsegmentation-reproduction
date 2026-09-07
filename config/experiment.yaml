@@ -1,0 +1,323 @@
+# =============================================================================
+# experiment.yaml -- Central experimental configuration
+# =============================================================================
+# Paper: "SDN-Based Prevention: Dynamic Microsegmentation and Automated
+#         Containment Policies", M. Saad Amir, Bahria University.
+#         (local file: Research_paper (18).pdf)
+#
+# Every field is tagged:
+#   [PAPER]      value explicitly stated in the paper  (category A)
+#   [PAPER-RANGE]value given as a range; a point value chosen (see ASSUMPTIONS.md)
+#   [DERIVED]    value computed from other [PAPER] values (category B)
+#   [ASSUMPTION] value NOT in the paper; chosen for reproducibility (category C)
+#
+# Do not edit [PAPER] / [DERIVED] values -- they are the specification.
+# [ASSUMPTION] values are isolated here on purpose so they can be replaced.
+# =============================================================================
+
+meta:
+  paper_title: "SDN-Based Prevention: Dynamic Microsegmentation and Automated Containment Policies"
+  paper_author: "Muhammad Saad Amir"
+  paper_file: "Research_paper (18).pdf"
+  reconstruction_task: "reproduction"          # not a redesign
+
+# -----------------------------------------------------------------------------
+# Software / testbed environment  (Table III)
+# -----------------------------------------------------------------------------
+environment:
+  operating_system: "Ubuntu 22.04 LTS"          # [PAPER] Table III
+  linux_kernel: "5.15"                           # [PAPER] Sec IV.A
+  python: "3.10"                                 # [PAPER] Table III
+  mininet: "2.3.0"                               # [PAPER] Table III
+  open_vswitch: "2.17.0"                         # [PAPER] Table III
+  ryu: "4.34"                                    # [ASSUMPTION] paper says only "Ryu SDN Framework (Python 3.10)"; 4.34 is the last release and the one compatible with a py3.10 runtime. See ASSUMPTIONS.md #1
+  openflow: "1.3"                                # [PAPER] Table III ("with Meter Table Support" / OFPMT_METER)
+  scikit_learn: "1.2.2"                          # [PAPER] Table III
+  numpy: "1.24.3"                                # [PAPER] Sec IV.A
+  pandas: "2.0.1"                                # [PAPER] Sec IV.A
+  scapy: "2.5.0"                                 # [PAPER] Table III
+  traffic_tools: ["iPerf3", "Scapy 2.5.0", "hping3"]   # [PAPER] Table III / Sec IV.C
+
+# -----------------------------------------------------------------------------
+# Telemetry
+# -----------------------------------------------------------------------------
+telemetry:
+  polling_interval_s: 3.0                        # [PAPER] Table III, Sec IV.A/IV.D, Fig 5 -- KEEP EXACT
+  multipart_request: "OFPT_MULTIPART_REQUEST"    # [PAPER] Sec V.A.1
+  collected_counters:                            # [PAPER] Sec V.A.1 ("port counters, flow entry hit counters, packet byte volumes")
+    - src_ip
+    - dst_ip
+    - src_port
+    - dst_port
+    - protocol
+    - packet_count
+    - byte_count
+    - flow_duration_s
+    - packet_rate_pps          # [DERIVED] packet_count / duration
+    - byte_rate_bps            # [DERIVED] byte_count  / duration
+
+# -----------------------------------------------------------------------------
+# Dataset generation protocol  (Sec IV.D, Phase 1 & 2)
+# -----------------------------------------------------------------------------
+dataset:
+  total_samples: 50000                           # [PAPER] Sec IV.D / Eq (3)
+  benign_samples: 25000                          # [PAPER]
+  malicious_samples: 25000                       # [PAPER]
+  class_balance: [0.5, 0.5]                      # [PAPER] "25,000 normal, 25,000 attack"
+  train_fraction: 0.70                           # [PAPER] "70% training set (35,000)"
+  test_fraction: 0.30                            # [PAPER] "30% test set (15,000)"
+  train_samples: 35000                           # [DERIVED]
+  test_samples: 15000                            # [DERIVED]
+  test_split_stratified: true                    # [ASSUMPTION] paper reports a 7,500/7,500 balanced test set (Table V) -> stratified split. ASSUMPTIONS.md #7
+  feature_order:                                 # [PAPER] Eq (3)
+    - pps
+    - bps
+    - duration
+    - tcp_ratio
+    - udp_ratio
+    - icmp_ratio
+
+# -----------------------------------------------------------------------------
+# Reproducibility / randomness
+# -----------------------------------------------------------------------------
+seeds:
+  random_state: 42                               # [PAPER] "random_state=42" Sec IV.D
+  numpy_seed: 42                                  # [ASSUMPTION] paper says "fixed random seeds" but only names random_state=42. ASSUMPTIONS.md #12
+  python_seed: 42                                 # [ASSUMPTION] same
+  trial_seed_policy: "base_plus_index"           # [ASSUMPTION] per-trial seed = random_state + trial_index (0..9). ASSUMPTIONS.md #12
+  trial_seed_base: 42
+
+# -----------------------------------------------------------------------------
+# Monte Carlo protocol  (Sec IV.G)
+# -----------------------------------------------------------------------------
+monte_carlo:
+  trials: 10                                     # [PAPER] "10 independent Monte Carlo trials"
+  report: "mean"                                 # [PAPER] "Reported quantitative metrics represent the mean values over the 10 evaluation runs"
+  also_report_std: true                          # [ASSUMPTION] task asks for std where appropriate; paper reports only mean
+
+# -----------------------------------------------------------------------------
+# Benign background traffic  (Sec IV.C.1)
+# -----------------------------------------------------------------------------
+benign_traffic:
+  generators: ["iperf3", "python_socket"]        # [PAPER]
+  protocols: ["HTTP", "HTTPS", "SQL", "file_transfer"]   # [PAPER] "HTTP web browsing, HTTPS secure traffic, database SQL querying, inter-departmental file transfers"
+  pps_mean: 0.2                                  # [PAPER] pps ~ N(mu=0.2, sigma=0.05)
+  pps_std: 0.05                                  # [PAPER]
+  bps_mean: 0.1                                  # [PAPER] bps ~ N(mu=0.1, sigma=0.02)
+  bps_std: 0.02                                  # [PAPER]
+
+# -----------------------------------------------------------------------------
+# Attack traffic  (Sec IV.C.2)
+# -----------------------------------------------------------------------------
+attack_traffic:
+  generators: ["scapy", "hping3"]                # [PAPER]
+  attacker_host: "h4"                            # [PAPER] "launched from the designated attacker host (h4)"
+  pps_mean: 3.0                                  # [PAPER] pps ~ N(mu=3.0, sigma=0.5)
+  pps_std: 0.5                                   # [PAPER]
+  bps_mean: 1.5                                  # [PAPER] bps ~ N(mu=1.5, sigma=0.3)
+  bps_std: 0.3                                   # [PAPER]
+
+# Six enterprise attack vectors + horizontal probe (Sec IV.C.2, Table VII).
+# traffic_share and target_cr come straight from Table VII and are used ONLY
+# for validation against the paper -- never as inputs that force an outcome.
+attack_vectors:
+  syn_flood:       { traffic_share: 0.35, target_cr: 0.98, layer: "L3/4", family: "volumetric" }   # [PAPER] Table VII
+  udp_flood:       { traffic_share: 0.25, target_cr: 0.97, layer: "L3/4", family: "volumetric" }   # [PAPER]
+  icmp_flood:      { traffic_share: 0.15, target_cr: 0.99, layer: "L3/4", family: "volumetric" }   # [PAPER]
+  mixed_ddos:      { traffic_share: 0.12, target_cr: 0.94, layer: "L3/4", family: "multi_vector" } # [PAPER]
+  slowloris:       { traffic_share: 0.08, target_cr: 0.92, layer: "L7",   family: "low_rate" }     # [PAPER]
+  http_flood:      { traffic_share: 0.05, target_cr: 0.90, layer: "L7",   family: "low_rate" }     # [PAPER]
+  # Horizontal reconnaissance / internal probing is described in prose (Sec IV.C.2)
+  # but has no row in Table VII, so it carries no traffic_share/target_cr.
+  horizontal_probe:
+    enabled: true                               # [PAPER] "From the compromised Host (h4) a subnet on the internal subnet is probed"
+    targets: ["h2", "h5"]                        # [PAPER] "hitting the HR server (h2) and DB (h5) server"
+    in_table_vii: false                         # [PAPER] absent from Table VII
+    traffic_share: 0.0                           # not part of the 6-vector CR breakdown
+
+# -----------------------------------------------------------------------------
+# 5-minute operational window  (Sec VI.B.2, Fig 6/7)
+# -----------------------------------------------------------------------------
+operational_window:
+  total_seconds: 300                             # [PAPER] "300 seconds of continuous operation"
+  attack_start_times_s: [60, 120]               # [PAPER] "attack initiation at t = 60s and t = 120s"
+  normal_baseline_pps_ceiling: 500               # [PAPER] "Normal baseline traffic flows consistently below 500 PPS"
+  attack_peak_pps: 14000                         # [PAPER] "traffic surges up to 14,000 PPS"
+  suppressed_pps_ceiling: 1000                   # [PAPER] "suppressed back to baseline levels (< 1,000 pps)"
+  sla_threshold_pct: 95.0                        # [PAPER] "95.0% Service Level Agreement (SLA) threshold"
+
+# -----------------------------------------------------------------------------
+# Baseline defense paradigms  (Sec IV.E, Table IV, Table VIII)
+# -----------------------------------------------------------------------------
+# Response latencies are stated by the paper as given modelling assumptions
+# ("If we consider a Traditional Firewall latency of 45.0s ...") -> [PAPER].
+# CR / FPR / FCR / NA for the three baselines appear in Table VIII as results
+# but the paper provides NO generative model for them; several trace to cited
+# literature (Table II). They are reproduced here by mechanism models whose
+# knobs live in `baseline_models` below and are documented in ASSUMPTIONS.md #17.
+runtime_traffic:
+  # System-level simulation traffic volume (per 3.0 s telemetry poll).
+  # The paper never states flow counts; these size the online sample used to
+  # MEASURE system-level CR/FPR/FCR/NA. [ASSUMPTION -- ASSUMPTIONS.md #18].
+  benign_flows_per_poll: 200              # [ASSUMPTION] ~20k benign flow-observations / 300 s trial
+  attack_flows_per_poll: 300              # [ASSUMPTION] active malicious flows during an attack burst
+  # Two attack bursts (Sec VI.B.2 / Fig 6): initiation at t = 60 s and t = 120 s.
+  attack_burst_duration_s: 60            # [ASSUMPTION] each burst lasts 60 s (Fig 6 shows surge-then-suppress)
+  # Runtime benign traffic carries MORE iPerf3 file-transfer burst windows than
+  # the (cleaner) training set -- Sec VI.B.7 attributes the online FPR rise
+  # (0.20% offline -> 1.2% system) to exactly these runtime bursts.
+  benign_bursty_fraction_runtime: 0.25  # [ASSUMPTION -- ASSUMPTIONS.md #6] vs 0.10 in the training set
+  # A fraction of volumetric attack flows are "hit and run": they complete
+  # inside a single 3.0 s telemetry window and therefore cannot be caught by
+  # 3 s polling (this is the paper's own stated latency bound, Sec IV.E).
+  hit_and_run_fraction: 0.06            # [ASSUMPTION -- ASSUMPTIONS.md #18]
+  hit_and_run_lifetime_s: {min: 0.3, max: 2.6}
+  # Per-flow wall-clock lifetime by vector family (governs whether a flow can
+  # still be mitigated once a rule is installed). [ASSUMPTION -- ASSUMPTIONS.md #18]
+  flow_lifetime_s:
+    volumetric: 45.0                     # SYN/UDP/ICMP/Mixed persist across the burst
+    low_rate: 55.0                       # Slowloris/HTTP hold connections open longer
+    benign: 12.0
+    horizontal_probe: 8.0
+  # Response-latency decomposition for the proposed system (Sec IV.E):
+  #   T_resp(flow) = polling_wait + extraction_time + install_time
+  latency_model:
+    polling_wait_bound_s: 3.0            # [PAPER] "bound being the 3.0 second telemetry polling delay"
+    extraction_time_s: {mean: 0.30, std: 0.08}   # [ASSUMPTION] feature calc + RF inference ("< 2.3 s" Sec V.A.3)
+    install_time_s:                     # [ASSUMPTION] OpenFlow write per rule kind (incl. 10-50 ms TCAM write, Sec VI.D)
+      BLOCK:      {mean: 0.45, std: 0.10}
+      QUARANTINE: {mean: 0.70, std: 0.15}
+      RATE_LIMIT: {mean: 1.00, std: 0.20}
+      MONITOR:    {mean: 0.20, std: 0.05}
+  # Fig 9 per-strategy response-time centres (Sec VI.B.5) -- reported as a
+  # diagnostic figure; NOT used to compute the headline T_resp.
+  fig9_strategy_response_s:              # [PAPER] Fig 9 caption
+    BLOCK: 1.4
+    QUARANTINE: 2.2
+    RATE_LIMIT: 3.0
+    MONITOR: 4.1
+
+baselines:
+  traditional_firewall:
+    response_latency_s: 45.0                     # [PAPER] Sec IV.E / Table IV / Table VIII
+    paper_cr: 0.72                               # [PAPER] Table VIII  (validation target only)
+    paper_fpr: 0.12                              # [PAPER] Table VIII
+    paper_fcr: 0.10                              # [PAPER] Table VIII
+    paper_na: 0.88                               # [PAPER] Table VIII
+  ids_ips:
+    response_latency_s: 30.0                     # [PAPER]
+    paper_cr: 0.785
+    paper_fpr: 0.085
+    paper_fcr: 0.065
+    paper_na: 0.91
+  static_sdn:
+    response_latency_s: 15.0                     # [PAPER] "default 15 second flow idle times"
+    flow_idle_timeout_s: 15                      # [PAPER]
+    paper_cr: 0.85
+    paper_fpr: 0.05
+    paper_fcr: 0.04
+    paper_na: 0.94
+  proposed_dynamic_sdn:
+    response_latency_s: null                     # [PAPER] result = 2.30s -> MEASURED, never an input
+    paper_cr: 0.968                              # [PAPER] Table VIII  (validation target only)
+    paper_response_latency_s: 2.30               # [PAPER]
+    paper_fpr: 0.012                             # [PAPER]
+    paper_fcr: 0.015                             # [PAPER]
+    paper_na: 0.985                              # [PAPER]
+
+# Mechanism knobs for the baseline models. [ASSUMPTION] -- set once from the
+# qualitative descriptions in Sec II / Sec IV.E / Table IV, NOT tuned to hit
+# the Table VIII numbers.  See ASSUMPTIONS.md #17.
+baseline_models:
+  traditional_firewall:
+    detects_families: ["volumetric", "multi_vector"]   # static ACLs match the volumetric headers of a mixed attack too; still ZERO east-west (horizontal_probe) visibility
+    east_west_visibility: false                 # [PAPER] "zero east-west visibility" Table I
+    per_vector_detection_prob:                  # prob a flow of that vector is ever matched by a static ACL
+      syn_flood: 0.80
+      udp_flood: 0.80
+      icmp_flood: 0.85
+      mixed_ddos: 0.65
+      slowloris: 0.10
+      http_flood: 0.15
+    collateral_block_fraction: 0.12             # fraction of benign east-west flows caught by coarse subnet drop
+    transient_degrade_factor: 0.45             # deepest transient availability dip (slow manual response)
+  ids_ips:
+    detects_families: ["volumetric", "multi_vector"]
+    signature_only: true                        # [PAPER] "Signature Pattern Match" Table IV
+    per_vector_detection_prob:
+      syn_flood: 0.90
+      udp_flood: 0.88
+      icmp_flood: 0.90
+      mixed_ddos: 0.75
+      slowloris: 0.35
+      http_flood: 0.40
+    collateral_block_fraction: 0.075            # asynchronous IP drop -> moderate collateral
+    transient_degrade_factor: 0.38
+  static_sdn:
+    uses_same_classifier: true                  # [PAPER] "ML classifiers directly into SDN control planes" (Wainwright base paper)
+    enforcement: "binary_drop"                  # [PAPER] Table IV "Binary Flow Drop"
+    collateral_block_fraction: 0.045            # 5-tuple drop but no meter/VLAN tiers -> FP flows fully dropped
+    transient_degrade_factor: 0.30
+  proposed_dynamic_sdn:
+    enforcement: "multi_tier"                   # Monitor / RateLimit / Quarantine / Block
+
+# -----------------------------------------------------------------------------
+# Physical / operational constraints  (Sec III.F, Eq 9-14)
+# -----------------------------------------------------------------------------
+constraints:
+  tcam_capacity_Mmax: 4000                       # [PAPER-RANGE] "typically 2,000 to 4,000 flow entries per switch" -> upper bound. ASSUMPTIONS.md #16
+  containment_latency_max_s: 5.0                 # [PAPER] Constraint 2: Tcontain(hi) <= 5.0 s
+  controller_cpu_load_max: 0.80                  # [PAPER] Constraint 3: Lctrl(t) <= 0.80
+  lctrl_intercept: 0.246                         # [PAPER] Eq (9): Lctrl(t) = 0.246 + 0.00454 * Nrules(t)
+  lctrl_slope: 0.00454                           # [PAPER] Eq (9)
+  lctrl_Lmax: 1.0                                # [ASSUMPTION] Eq (9) divides by Lmax; value never given. ASSUMPTIONS.md #10
+  action_domain: [0, 1, 2, 3]                    # [PAPER] Constraint 5: Ck(t) in {0,1,2,3}
+
+# -----------------------------------------------------------------------------
+# Containment policy resolution mode
+# -----------------------------------------------------------------------------
+# The paper describes BOTH Algorithm 1 (critical->meter / lateral->VLAN99 /
+# else->drop@200) AND graded severity tiers (Sec V.A.4). They overlap.
+# [ASSUMPTION -- ASSUMPTIONS.md #11]:
+#   algorithm1     -> exactly Algorithm 1 (non-critical/non-lateral => BLOCK)
+#   severity_tiers -> resolve every compromised flow by severity S_k only
+#   hybrid         -> keep Algorithm 1's critical/lateral routing, resolve the
+#                     rest by severity tiers (default; honours Constraint 4).
+policy:
+  mode: "hybrid"
+
+# -----------------------------------------------------------------------------
+# Host Threat Risk Score  R_i(t)   (Eq 4, Sec III.D Phase 3)
+# -----------------------------------------------------------------------------
+# R_i(t) = [ w_rf*P_attack + w1*delta1 + w2*delta2 + w3*delta3 ] * 100
+# The paper gives the FORM and the four signal names but NOT the weights, the
+# compromise threshold, or how delta1..3 are computed from raw telemetry.
+# All [ASSUMPTION] -- see ASSUMPTIONS.md #6 and #9.
+risk_engine:
+  w_rf: 0.70                    # [ASSUMPTION] weight on the RF attack probability (dominant term)
+  w1: 0.15                      # [ASSUMPTION] weight on traffic-volume-spike signal delta1
+  w2: 0.10                      # [ASSUMPTION] weight on port-scan signal delta2
+  w3: 0.05                      # [ASSUMPTION] weight on auth-failure signal delta3
+  # Three host states x_i(t) in {0,1,2}  (Eq 2): 0 Clean, 1 Suspected, 2 Compromised.
+  risk_suspected_threshold: 35.0  # [ASSUMPTION] R_i(t) in [35,60) => x_i = 1 (Suspected): precautionary rate-limit of RF-flagged flows
+  risk_threshold: 60.0          # [ASSUMPTION] R_i(t) >= 60 => x_i = 2 (Compromised): full DMCA enforcement (Algorithm 1 line 6)
+  scan_cap: 8.0                 # [ASSUMPTION] distinct destinations that saturate delta2
+  auth_cap: 5.0                 # [ASSUMPTION] failed-auth events that saturate delta3
+  host_p_attack_aggregation: "mean_max_blend"  # [ASSUMPTION] P_attack(h_i) = 0.5*mean + 0.5*max over the host's flows this poll
+
+# -----------------------------------------------------------------------------
+# Multi-Objective Optimization Problem weights  (Sec III.E, Eq 5)
+# -----------------------------------------------------------------------------
+# max Phi(C) = alpha*tau(C) - beta*fcr(C) + gamma*avail(C) - delta*lambda(C),
+# with alpha+beta+gamma+delta = 1.  The four weights are NOT given in the paper.
+moop:
+  alpha: 0.40                                    # [ASSUMPTION] weight on containment rate tau.   ASSUMPTIONS.md #9
+  beta: 0.30                                     # [ASSUMPTION] penalty on false containment fcr.
+  gamma: 0.20                                    # [ASSUMPTION] weight on availability.
+  delta: 0.10                                    # [ASSUMPTION] penalty on controller load lambda.
+  role: "diagnostic"                             # [ASSUMPTION] Phi is reported as a utility score; enforcement follows Algorithm 1 + severity tiers (the paper's operational path). ASSUMPTIONS.md #9
+
+paths:
+  results_dir: "results"
+  figures_dir: "figures"
+  model_dir: "results/model"

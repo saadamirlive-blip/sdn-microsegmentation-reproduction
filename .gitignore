@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Large / bulky generated artefacts -- regenerate with `python run_experiment.py`
+results/dataset_50k.csv
+results/logs/
+results/model/
+results/run_all_trials_summary.json
+results/testbed/
+
+# A committed snapshot of the headline outputs IS kept for review:
+#   results/reproduction_comparison.csv  results/aggregate_results.csv
+#   results/raw_trial_results.csv        results/*.json  results/*.txt
+#   results/containment_by_vector.csv    results/latency_results.csv
+#   results/network_availability.csv     results/availability_timeline.csv
+#   results/false_containment.csv        results/feature_importance.csv
+#   results/confusion_matrix.csv         figures/*.png
+# (everything above this line stays out of git.)
+
+# OS
+.DS_Store
+Thumbs.db

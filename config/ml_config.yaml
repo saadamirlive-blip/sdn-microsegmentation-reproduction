@@ -1,0 +1,144 @@
+# =============================================================================
+# ml_config.yaml -- Machine-learning pipeline configuration
+#   Sec III.D (3-Phase ML & OpenFlow pipeline), Sec IV.D (training protocol),
+#   Table V (classification performance), Table VI (feature importance).
+# =============================================================================
+
+model:
+  estimator: "sklearn.ensemble.RandomForestClassifier"   # [PAPER] "Random Forest classifier"
+  hyperparameters:
+    n_estimators: 100            # [PAPER] "100 decision trees (n_estimators=100)"
+    max_depth: 12               # [PAPER] "maximum tree depth of 12 (max_depth=12)"
+    min_samples_split: 5        # [PAPER] "a minimum sample split of 5"
+    class_weight: "balanced"    # [PAPER] "balanced class weighting"
+    random_state: 42            # [PAPER] "A fixed random seed (random_state=42)"
+    n_jobs: -1                  # [ASSUMPTION] runtime only; does not affect the fitted model. ASSUMPTIONS.md #13
+  # Everything else stays at scikit-learn 1.2.2 defaults (criterion='gini',
+  # max_features='sqrt', bootstrap=True, ...). The paper names no other knob,
+  # so NO other knob is set. No hyper-parameter search is performed.
+  hyperparameter_search: false  # [PAPER] none described
+
+preprocessing:
+  scaler: "sklearn.preprocessing.StandardScaler"   # [PAPER] "standardized using StandardScaler (z = (x - mu)/sigma)"
+  fit_on: "train_only"          # leakage guard (task Sec 11): fit on TRAIN, transform TEST
+  artifact_scaler: "results/model/scaler.pkl"      # [PAPER] "saved to scaler.pkl"
+  artifact_model: "results/model/model.pkl"        # [PAPER] "saved to model.pkl"
+
+features:
+  # 6-D flow feature vector phi_k(t)  (Eq 3)
+  order: [pps, bps, duration, tcp_ratio, udp_ratio, icmp_ratio]   # [PAPER]
+  # Paper-reported feature importances (Table VI) -- VALIDATION TARGETS ONLY.
+  paper_importance:
+    pps: 0.425
+    bps: 0.310
+    duration: 0.142
+    tcp_ratio: 0.065
+    udp_ratio: 0.038
+    icmp_ratio: 0.020
+
+# Paper-reported offline classifier results -- VALIDATION TARGETS ONLY
+# (Table V; note the paper's own text says 99.82% in Sec III.D and 99.77% in
+#  Table V -- the Table V value is used as the reference. ASSUMPTIONS.md #14)
+paper_offline_results:
+  test_samples: 15000
+  test_normal: 7500
+  test_attack: 7500
+  accuracy: 0.9977
+  attack_precision: 0.9980
+  recall: 0.9973
+  roc_auc: 0.9998
+  confusion:
+    true_normal: 7485
+    false_positive: 15
+    false_negative: 20
+    true_attack: 7480
+  system_level_fpr: 0.012        # [PAPER] Sec VI.B.7 -- distinct from the 0.20% offline FPR
+
+# =============================================================================
+# Synthetic feature generative model  (Phase 1 dataset build)
+# -----------------------------------------------------------------------------
+# The paper fixes ONLY the pps and bps distributions:
+#   benign:  pps ~ N(0.2, 0.05)   bps ~ N(0.1, 0.02)
+#   attack:  pps ~ N(3.0, 0.5)    bps ~ N(1.5, 0.3)
+# (values in the paper's normalised units -- reproduced verbatim).
+#
+# It gives NO distribution for duration / tcp_ratio / udp_ratio / icmp_ratio.
+# [ASSUMPTION] -- ASSUMPTIONS.md #6.  These are set ONCE from the qualitative
+# descriptions in Table VI ("diagnostic significance") and the attack-vector
+# text in Sec IV.C.2, then FROZEN.  They are NOT tuned to hit Table V / VI.
+#
+# duration is in the same normalised unit family; ratios are true fractions in
+# [0,1] and are renormalised to sum to 1 per sample.
+# =============================================================================
+synthetic_features:
+  pps:   { benign: {mean: 0.2, std: 0.05}, attack: {mean: 3.0, std: 0.5} }   # [PAPER]
+  bps:   { benign: {mean: 0.1, std: 0.02}, attack: {mean: 1.5, std: 0.3} }   # [PAPER]
+
+  duration:                                                                  # [ASSUMPTION]
+    benign: {mean: 1.00, std: 0.35, min: 0.05}
+    # attack duration is vector-specific (Slowloris = long-lived, floods = short bursts)
+    attack_by_vector:
+      syn_flood:  {mean: 0.25, std: 0.10, min: 0.02}
+      udp_flood:  {mean: 0.25, std: 0.10, min: 0.02}
+      icmp_flood: {mean: 0.20, std: 0.08, min: 0.02}
+      mixed_ddos: {mean: 0.30, std: 0.15, min: 0.02}
+      slowloris:  {mean: 3.50, std: 1.20, min: 0.50}
+      http_flood: {mean: 0.80, std: 0.40, min: 0.05}
+      horizontal_probe: {mean: 0.15, std: 0.06, min: 0.02}
+
+  # protocol mix (pre-normalisation Dirichlet concentration per class/vector).
+  # Higher concentration on a component => that protocol dominates the flow.
+  protocol_mix:                                                              # [ASSUMPTION]
+    benign:            {tcp: 6.0, udp: 3.0, icmp: 1.0}    # enterprise traffic mostly TCP
+    syn_flood:         {tcp: 30.0, udp: 0.3, icmp: 0.2}
+    udp_flood:         {tcp: 0.3, udp: 30.0, icmp: 0.2}
+    icmp_flood:        {tcp: 0.2, udp: 0.3, icmp: 30.0}
+    mixed_ddos:        {tcp: 8.0, udp: 8.0, icmp: 6.0}
+    slowloris:         {tcp: 25.0, udp: 0.2, icmp: 0.1}
+    http_flood:        {tcp: 25.0, udp: 0.3, icmp: 0.1}
+    horizontal_probe:  {tcp: 12.0, udp: 2.0, icmp: 3.0}
+
+  # For low-rate L7 attacks the pps/bps means are pulled toward the benign
+  # regime (that is exactly why the paper reports lower CR for them, Sec VI.B.4).
+  low_rate_pps_scale: 0.18      # [ASSUMPTION] Slowloris/HTTP flood pps ~= 0.18 * attack mean
+  low_rate_bps_scale: 0.25      # [ASSUMPTION]
+
+  # --- class-overlap mechanisms (traceable to the paper, params [ASSUMPTION]) ---
+  # Sec VI.B.7 states benign high-bandwidth iPerf3 FILE-TRANSFER flows produce
+  # packet bursts inside a statistics window that transiently raise the rate
+  # features -- this is the stated cause of the online FPR rising from 0.20%
+  # (offline) to 1.2% (system).  We model benign traffic as a 2-component
+  # mixture so the offline classes are NOT perfectly separable either.
+  benign_mixture:
+    steady_fraction: 0.90       # [ASSUMPTION] ordinary HTTP/HTTPS/SQL browsing flows
+    bursty_fraction: 0.10       # [ASSUMPTION] iPerf3 inter-department file-transfer burst windows (training set)
+    bursty_pps: {mean: 0.90, std: 0.45, min: 0.0001}   # [ASSUMPTION] elevated but below the 3.0 attack mean
+    bursty_bps: {mean: 0.55, std: 0.28, min: 0.0001}   # [ASSUMPTION]
+    bursty_duration: {mean: 1.6, std: 0.7, min: 0.05}  # [ASSUMPTION] longer-lived transfers
+    # Within the bursty component, a sub-fraction are heavy transfer spikes whose
+    # rate momentarily approaches the attack regime -- the exact "burst of packets
+    # arriving in the statistical windows which temporarily increase the
+    # thresholds" described in Sec VI.B.7 as the cause of the online FPR.
+    heavy_spike_fraction: 0.25                          # [ASSUMPTION] of the bursty component
+    heavy_spike_pps: {mean: 2.05, std: 0.75, min: 0.0001}  # [ASSUMPTION]
+    heavy_spike_bps: {mean: 1.05, std: 0.40, min: 0.0001}  # [ASSUMPTION]
+
+  # Sec VI.B.4: Slowloris/HTTP-flood traffic "closely resemble legitimate web
+  # connections"; a stealthy sub-fraction sits essentially on top of benign HTTP.
+  low_rate_stealth_fraction: 0.15   # [ASSUMPTION] portion of Slowloris/HTTP flows drawn from the benign HTTP regime
+
+  # small measurement jitter on every feature so no split is ever perfectly clean
+  feature_jitter_std: 0.01     # [ASSUMPTION] ~1% telemetry quantisation / timing noise
+
+# Per-vector share of the 25,000 malicious samples.
+# [PAPER] Table VII gives the shares for the 6 vectors (sum = 1.0).
+# horizontal_probe is added on top as an [ASSUMPTION] block of extra malicious
+# flows used by the system-level simulation only (not in Table VII), sized at
+# 0 in the OFFLINE dataset so the 25,000/25,000 balance is exactly preserved.
+malicious_sample_shares:
+  syn_flood: 0.35
+  udp_flood: 0.25
+  icmp_flood: 0.15
+  mixed_ddos: 0.12
+  slowloris: 0.08
+  http_flood: 0.05

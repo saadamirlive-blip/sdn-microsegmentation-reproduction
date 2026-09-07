@@ -1,0 +1,24 @@
+# conda environment for the pure-Python reproduction pipeline.
+#   conda env create -f environment.yml
+#   conda activate sdn-microseg-repro
+#
+# Matches the paper's pins (Table III / Sec IV.A) on Python 3.10.
+name: sdn-microseg-repro
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=1.24.3          # [PAPER]
+  - pandas=2.0.1          # [PAPER]
+  - scikit-learn=1.2.2    # [PAPER]
+  - scipy=1.10.1
+  - matplotlib-base=3.7.1
+  - joblib=1.2.0
+  - pyyaml=6.0
+  - pytest
+  - pip
+  # --- testbed only (Ubuntu 22.04); uncomment on a Linux host with Mininet/OVS ---
+  # - pip:
+  #     - ryu==4.34
+  #     - eventlet==0.30.2
+  #     - scapy==2.5.0

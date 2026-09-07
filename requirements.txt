@@ -1,0 +1,28 @@
+# =============================================================================
+# requirements.txt -- PAPER-PINNED versions (Table III, Sec IV.A)
+# Target: Python 3.10 on Ubuntu 22.04 LTS (Linux kernel 5.15)
+# =============================================================================
+# These are the exact versions the paper specifies. They install cleanly on
+# CPython 3.10 (Linux and Windows). The pure-Python reproduction pipeline
+# (dataset -> RF -> simulation -> metrics -> figures) needs only this list.
+# -----------------------------------------------------------------------------
+
+numpy==1.24.3            # [PAPER] Sec IV.A
+pandas==2.0.1            # [PAPER] Sec IV.A
+scikit-learn==1.2.2     # [PAPER] Table III
+scipy==1.10.1           # transitive pin compatible with the above (paper: unspecified)
+matplotlib==3.7.1       # figures (paper: unspecified)
+joblib==1.2.0           # model.pkl / scaler.pkl serialisation
+pyyaml==6.0             # config loading
+
+# -----------------------------------------------------------------------------
+# Real Mininet/Ryu testbed (Ubuntu 22.04 ONLY -- see Dockerfile / Vagrantfile).
+# Install with:  pip install -r requirements.txt -c constraints-testbed.txt
+# or via apt (mininet, openvswitch-switch) + the pins below.
+# -----------------------------------------------------------------------------
+# ryu==4.34             # [ASSUMPTION -- ASSUMPTIONS.md #1] paper: "Ryu SDN Framework (Python 3.10)"
+# eventlet==0.30.2      # Ryu 4.34 runtime dependency (pinned for py3.10 compat)
+# scapy==2.5.0          # [PAPER] Table III  (attack traffic)
+# mininet==2.3.0        # [PAPER] Table III  (install from apt or source, not pip)
+#
+# System packages (apt):  mininet openvswitch-switch openvswitch-common iperf3 hping3
