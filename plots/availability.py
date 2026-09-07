@@ -1,7 +1,8 @@
-"""CLI wrapper -- see plots/figures.py:fig_availability_bar (task Sec 25 layout)."""
-from plots.figures import fig_availability_bar as _f, fig_availability_timeline as _tl
+"""CLI wrapper for the availability bar chart (Fig 12) + timeline (Fig 7). See plots/figures.py."""
+from common import config
+from plots.figures import fig_availability_bar, fig_availability_timeline
 
 if __name__ == "__main__":
-    _f()
-    if "availability" == "availability":
-        _tl()
+    fig_availability_bar()
+    fig_availability_timeline()
+    print(f"wrote {config.figures_dir() / 'fig12_availability.png'} and fig07_availability_timeline.png")

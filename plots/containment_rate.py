@@ -1,7 +1,7 @@
-"""CLI wrapper -- see plots/figures.py:fig_containment_rate (task Sec 25 layout)."""
-from plots.figures import fig_containment_rate as _f, fig_availability_timeline as _tl
+"""CLI wrapper for the CR bar chart (Fig 13). See plots/figures.py."""
+from common import config
+from plots.figures import fig_containment_rate
 
 if __name__ == "__main__":
-    _f()
-    if "containment_rate" == "availability":
-        _tl()
+    fig_containment_rate()
+    print(f"wrote {config.figures_dir() / 'fig13_containment_rate.png'}")

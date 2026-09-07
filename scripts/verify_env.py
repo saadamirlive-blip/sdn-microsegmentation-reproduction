@@ -10,9 +10,11 @@ the Ubuntu testbed; see testbed/README and Dockerfile.
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 
-from common import config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common import config  # noqa: E402
 
 PINS = {  # module -> paper-specified version
     "numpy": "1.24.3",

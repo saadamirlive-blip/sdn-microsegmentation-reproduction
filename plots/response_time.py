@@ -1,7 +1,7 @@
-"""CLI wrapper -- see plots/figures.py:fig_response_time (task Sec 25 layout)."""
-from plots.figures import fig_response_time as _f, fig_availability_timeline as _tl
+"""CLI wrapper for the response-time bar chart (Fig 10). See plots/figures.py."""
+from common import config
+from plots.figures import fig_response_time
 
 if __name__ == "__main__":
-    _f()
-    if "response_time" == "availability":
-        _tl()
+    fig_response_time()
+    print(f"wrote {config.figures_dir() / 'fig10_response_time.png'}")
