@@ -7,19 +7,11 @@ venv/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# Bulky generated artefacts -- regenerate with `python run_experiment.py`
-results/dataset_50k.csv
-results/logs/
-results/model/
-results/testbed/
-
-# A snapshot of the small result files IS committed for review:
-#   results/run_summary.json  results/aggregate_results.csv
-#   results/raw_trial_results.csv  results/*.json  results/*.txt
-#   results/containment_by_vector.csv  results/latency_results.csv
-#   results/network_availability.csv  results/availability_timeline.csv
-#   results/false_containment.csv  results/feature_importance.csv
-#   results/confusion_matrix.csv  figures/*.png
+# Generated at run time -- regenerate with `python run_experiment.py`
+results/*
+!results/.gitkeep
+figures/*
+!figures/.gitkeep
 
 # OS
 .DS_Store
