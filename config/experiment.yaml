@@ -48,6 +48,20 @@ telemetry:
     - byte_rate_bps            # derived: byte_count  / duration
 
 # -----------------------------------------------------------------------------
+# Mininet/Ryu testbed (real packets) -- unit mapping
+# -----------------------------------------------------------------------------
+# A live OVS reports real packet/byte rates (hundreds to thousands). The Random
+# Forest is trained in normalised units (benign pps ~0.2, attack pps ~3.0), so
+# the controller divides observed rates by these before inference.
+#
+# SANITY-CHECK on the first run: open results/testbed/telemetry_*.csv --
+# benign rows should sit near pps 0.2 / bps 0.1, attack rows near pps 3.0 /
+# bps 1.5. If they are off by a constant factor, adjust these two numbers.
+testbed:
+  pps_scale: 4000.0            # matches attacks/_common.py PPS_SCALE
+  bps_scale: 480000.0
+
+# -----------------------------------------------------------------------------
 # Dataset generation (Phase 1) + train/test protocol (Phase 2)
 # -----------------------------------------------------------------------------
 dataset:

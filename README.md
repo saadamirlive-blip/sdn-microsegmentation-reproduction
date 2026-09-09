@@ -89,18 +89,47 @@ python -m plots.make_all                     # (re)generate figures from results
 
 ---
 
-## 6. Optional: the Mininet/Ryu testbed (Ubuntu 22.04)
+## 6. Real-packet run: the Mininet/Ryu testbed (Ubuntu 22.04)
+
+This path sends **real packets** through an emulated OVS network — synthetic
+scenarios, real traffic — the same way the reference methodology does.
+Ubuntu 22.04 (a VM, WSL2, or a cloud box), with `sudo`.
 
 ```bash
-pip install -r requirements-testbed.txt      # os-ken + scapy (or real Ryu, see the file)
-python -m ml.train_rf                         # the controller loads model.pkl
+sudo apt-get update
+sudo apt-get install -y mininet openvswitch-switch iperf3 hping3 python3.10 python3.10-venv
+sudo service openvswitch-switch start
+```
+
+```bash
+python3.10 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-testbed.txt   # os-ken + scapy
+```
+
+```bash
+python -m ml.train_rf                         # the controller loads results/model/model.pkl
 sudo env "PATH=$PATH" ./scripts/run_testbed.sh 300
 ```
 
-`run_testbed.sh` starts the controller (`ryu-manager`, or `osken-manager` when
-Ryu is unavailable), builds the topology, drives benign iperf3/socket traffic
-and the six attack vectors + horizontal probe from **h4**, and writes telemetry
-to `results/testbed/`.
+`run_testbed.sh` does the whole run: starts the SDN controller
+(`ryu-manager`, or `osken-manager` when Ryu can't be installed), builds the
+1-core / 3-edge / 13-host topology, drives benign iperf3 + socket traffic and
+the six attack vectors + horizontal probe from **h4**, logs a telemetry +
+decision row every 3 s to `results/testbed/telemetry_<ts>.csv`, and finally runs:
+
+```bash
+python -m experiments.metrics_from_testbed    # -> results/testbed/metrics_summary.json
+```
+
+which turns that telemetry into the same five metrics (CR / T_resp / FPR / FCR /
+NA). On the **first** run, open `results/testbed/telemetry_*.csv` and check the
+`pps` column: benign rows should be near `0.2`, attack rows near `3.0`. If
+they're off by a constant factor, adjust `testbed.pps_scale` / `testbed.bps_scale`
+in `config/experiment.yaml`.
+
+> Note: this path is Linux-only and has not been executed from the Windows
+> machine these results were produced on. The code is complete; the unit-scale
+> defaults may need one adjustment on a real box.
 
 ---
 

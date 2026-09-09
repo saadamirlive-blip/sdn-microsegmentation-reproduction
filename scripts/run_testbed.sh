@@ -15,8 +15,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DURATION="${1:-300}"
-ATTACK1_AT=60         # Fig 6 attack initiation
-ATTACK2_AT=120        # 
+ATTACK1_AT=60         # first attack burst starts at t = 60 s
+ATTACK2_AT=120        # second at t = 120 s
 PY="${PYTHON:-python3.10}"
 
 command -v mn >/dev/null || { echo "Mininet not found -- Ubuntu 22.04 testbed only"; exit 1; }
@@ -80,5 +80,6 @@ time.sleep(DUR + 10)
 net.stop()
 PYEOF
 
-echo "[4] telemetry written to results/testbed/telemetry_*.csv"
-echo "    feed it to: python -m experiments.run_all_trials --from-telemetry <csv>"
+echo "[4] compute the 5 metrics from the captured telemetry"
+"$PY" -m experiments.metrics_from_testbed || \
+  echo "    (telemetry is in results/testbed/telemetry_*.csv; run metrics_from_testbed manually)"

@@ -14,6 +14,11 @@ from common.features import RawFlowStats
 
 POLLING_INTERVAL_S = float(config.experiment()["telemetry"]["polling_interval_s"])  # 3.0
 
+# live OVS reports real packet/byte rates; the model expects normalised units
+_TB = config.experiment().get("testbed", {})
+_PPS_SCALE = float(_TB.get("pps_scale", 1.0))
+_BPS_SCALE = float(_TB.get("bps_scale", 1.0))
+
 
 def build_flow_stats_request(datapath):
     """OFPFlowStatsRequest for all tables / all flows on one datapath."""
@@ -48,8 +53,9 @@ def parse_flow_stats_reply(body, *, dpid: int, prev: Dict[str, dict] | None = No
         dby = stat.byte_count - prev.get(key, {}).get("byt", 0)
         dpk = max(dpk, 0); dby = max(dby, 0)
         dur = stat.duration_sec + stat.duration_nsec / 1e9
-        pps = dpk / POLLING_INTERVAL_S
-        bps = dby / POLLING_INTERVAL_S
+        # per-interval rate, normalised to the model's training units
+        pps = (dpk / POLLING_INTERVAL_S) / _PPS_SCALE
+        bps = (dby / POLLING_INTERVAL_S) / _BPS_SCALE
 
         rec = RawFlowStats(
             flow_id=key, src_ip=src, dst_ip=dst, src_port=int(sport), dst_port=int(dport),
