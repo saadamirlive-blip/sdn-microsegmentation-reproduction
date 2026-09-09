@@ -42,18 +42,37 @@ drop priority 200) — only the data plane differs.
 | matplotlib, joblib, pyyaml, scipy | see `requirements.txt` |
 | *(testbed only)* Ubuntu 22.04, Mininet 2.3.0, Open vSwitch 2.17.0, Ryu (or os-ken), OpenFlow 1.3, Scapy 2.5.0, iperf3, hping3 | |
 
-Newer package versions run fine (a mismatch only warns); the delta is recorded
-in `results/experiment_metadata.json`.
+The pinned packages need **Python 3.10** (they don't build on 3.12+). A newer
+Python for the runtime is fine once the venv is 3.10.
 
 ---
 
 ## 3. Install
 
+**If you already have Python 3.10** (`python3.10 --version` works):
+
 ```bash
 python3.10 -m venv .venv
 source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python scripts/verify_env.py
+pip install -r requirements.txt pytest
+```
+
+**Otherwise** (e.g. a GitHub Codespace, whose default Python is too new) — use
+[`uv`](https://docs.astral.sh/uv/), which fetches Python 3.10 for you. Run each
+line on its own:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+uv venv --python 3.10 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt pytest
+```
+
+Then, in this and any later terminal:
+
+```bash
+source .venv/bin/activate
 ```
 
 Conda: `conda env create -f environment.yml && conda activate sdn-microseg`.
@@ -63,10 +82,22 @@ Docker (Ubuntu 22.04, both paths): `docker build -t sdn-microseg . && docker run
 
 ## 4. Run the experiment
 
+Full run (10 Monte Carlo trials):
+
 ```bash
-python run_experiment.py            # full run: 10 Monte Carlo trials
-python run_experiment.py --trials 3 # quick run
-python run_experiment.py --skip-train   # reuse results/model/model.pkl
+python run_experiment.py
+```
+
+Quick run (3 trials):
+
+```bash
+python run_experiment.py --trials 3
+```
+
+Reuse an already-trained model:
+
+```bash
+python run_experiment.py --skip-train
 ```
 
 Steps: verify env → build 50,000-sample dataset (25k benign / 25k malicious) →
