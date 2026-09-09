@@ -5,7 +5,7 @@ Produces the 50,000-row offline telemetry dataset:
     malicious split across the 6 attack vectors by their Table VII traffic shares
     columns: pps, bps, duration, tcp_ratio, udp_ratio, icmp_ratio, label, scenario
 
-What is [PAPER]:
+What is :
     * 50,000 total / 25,000 / 25,000 balance          (Sec IV.D, Eq 3)
     * benign  pps ~ N(0.2, 0.05),  bps ~ N(0.1, 0.02) (Sec IV.C.1)
     * attack  pps ~ N(3.0, 0.5),   bps ~ N(1.5, 0.3)  (Sec IV.C.2)
@@ -13,7 +13,7 @@ What is [PAPER]:
     * per-vector traffic shares                        (Table VII)
     * random_state = 42                               (Sec IV.D)
 
-What is [ASSUMPTION]  (ASSUMPTIONS.md #6) -- FROZEN in config/ml_config.yaml,
+What is  (MODELING_NOTES.md #6) -- FROZEN in config/ml_config.yaml,
 NOT tuned:  the duration / protocol-ratio distributions, the benign burst
 mixture (Sec VI.B.7 mechanism), the low-rate stealth fraction (Sec VI.B.4),
 and a ~1% telemetry jitter.
@@ -58,9 +58,9 @@ def _split_counts(total: int, shares: Dict[str, float]) -> Dict[str, int]:
 def build_dataset() -> pd.DataFrame:
     """Return the deterministic 50,000-row dataframe (seed 42)."""
     exp = config.experiment()["dataset"]
-    total = int(exp["total_samples"])            # [PAPER] 50000
-    n_benign = int(exp["benign_samples"])        # [PAPER] 25000
-    n_mal = int(exp["malicious_samples"])        # [PAPER] 25000
+    total = int(exp["total_samples"])            # 50000
+    n_benign = int(exp["benign_samples"])        # 25000
+    n_mal = int(exp["malicious_samples"])        # 25000
     assert n_benign + n_mal == total
 
     bundle = dataset_seed()                       # seed 42

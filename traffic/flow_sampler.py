@@ -6,8 +6,8 @@ Single source of the per-class / per-vector feature distributions so that
 draw flows from an IDENTICAL distribution -- the Random Forest therefore always
 sees in-distribution data at runtime.
 
-[PAPER]  pps/bps N(mu,sigma) per class (Sec IV.C).
-[ASSUMPTION -- ASSUMPTIONS.md #6] everything else (duration, protocol ratios,
+ pps/bps N(mu,sigma) per class (Sec IV.C).
+everything else (duration, protocol ratios,
 benign burst mixture, low-rate stealth fraction, jitter) -- all read from
 ``config/ml_config.yaml : synthetic_features`` and FROZEN there.
 """

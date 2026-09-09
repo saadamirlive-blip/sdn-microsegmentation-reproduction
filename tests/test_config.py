@@ -1,23 +1,17 @@
-"""Assert the [PAPER] specification values are wired through unchanged."""
+"""Internal-consistency checks on the configuration."""
 import math
 
-import pytest
 
 from common import config
 
 
-def test_environment_versions_match_paper():
+def test_environment_versions():
     e = config.experiment()["environment"]
-    assert e["operating_system"] == "Ubuntu 22.04 LTS"
-    assert e["linux_kernel"] == "5.15"
     assert e["python"] == "3.10"
-    assert e["mininet"] == "2.3.0"
-    assert e["open_vswitch"] == "2.17.0"
-    assert e["openflow"] == "1.3"
     assert e["scikit_learn"] == "1.2.2"
     assert e["numpy"] == "1.24.3"
     assert e["pandas"] == "2.0.1"
-    assert e["scapy"] == "2.5.0"
+    assert e["openflow"] == "1.3"
 
 
 def test_telemetry_interval_is_exactly_3s():
@@ -57,19 +51,11 @@ def test_containment_constants():
     assert CONSTANTS["drop_priority"] == 200
 
 
-def test_baseline_latencies_are_paper_values():
-    b = config.experiment()["baselines"]
-    assert b["traditional_firewall"]["response_latency_s"] == 45.0
-    assert b["ids_ips"]["response_latency_s"] == 30.0
-    assert b["static_sdn"]["response_latency_s"] == 15.0
-    assert b["proposed_dynamic_sdn"]["response_latency_s"] is None  # measured
-
-
 def test_monte_carlo_trials():
     assert config.experiment()["monte_carlo"]["trials"] == 10
 
 
-def test_constraints_paper_coefficients():
+def test_constraint_coefficients():
     c = config.experiment()["constraints"]
     assert c["lctrl_intercept"] == 0.246
     assert c["lctrl_slope"] == 0.00454

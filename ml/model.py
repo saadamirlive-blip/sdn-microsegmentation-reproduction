@@ -1,6 +1,6 @@
 """Random Forest factory  (Sec III.D Phase 2, Sec IV.D).
 
-Hyper-parameters -- ALL [PAPER], read from ``config/ml_config.yaml``:
+Hyper-parameters -- ALL , read from ``config/ml_config.yaml``:
     n_estimators      = 100
     max_depth         = 12
     min_samples_split = 5
@@ -26,10 +26,10 @@ def rf_hyperparameters() -> Dict[str, Any]:
 def build_random_forest() -> RandomForestClassifier:
     hp = rf_hyperparameters()
     return RandomForestClassifier(
-        n_estimators=int(hp["n_estimators"]),          # [PAPER] 100
-        max_depth=int(hp["max_depth"]),                # [PAPER] 12
-        min_samples_split=int(hp["min_samples_split"]),  # [PAPER] 5
-        class_weight=hp["class_weight"],               # [PAPER] "balanced"
-        random_state=int(hp["random_state"]),          # [PAPER] 42
-        n_jobs=int(hp.get("n_jobs", -1)),              # [ASSUMPTION] runtime-only
+        n_estimators=int(hp["n_estimators"]),          # 100
+        max_depth=int(hp["max_depth"]),                # 12
+        min_samples_split=int(hp["min_samples_split"]),  # 5
+        class_weight=hp["class_weight"],               # "balanced"
+        random_state=int(hp["random_state"]),          # 42
+        n_jobs=int(hp.get("n_jobs", -1)),              # runtime-only
     )

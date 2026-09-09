@@ -39,8 +39,8 @@ def train(save: bool = True):
 
     if save:
         mdir = config.model_dir()
-        joblib.dump(clf, mdir / "model.pkl")             # [PAPER] model.pkl
-        joblib.dump(split.scaler, mdir / "scaler.pkl")   # [PAPER] scaler.pkl
+        joblib.dump(clf, mdir / "model.pkl")             # model.pkl
+        joblib.dump(split.scaler, mdir / "scaler.pkl")   # scaler.pkl
         meta = {
             "hyperparameters": rf_hyperparameters(),
             "dataset": asdict(dsum),

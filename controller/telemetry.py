@@ -12,7 +12,7 @@ from typing import Dict, List
 from common import config
 from common.features import RawFlowStats
 
-POLLING_INTERVAL_S = float(config.experiment()["telemetry"]["polling_interval_s"])  # [PAPER] 3.0
+POLLING_INTERVAL_S = float(config.experiment()["telemetry"]["polling_interval_s"])  # 3.0
 
 
 def build_flow_stats_request(datapath):

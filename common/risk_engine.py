@@ -15,12 +15,12 @@ Values the paper DOES specify:
   * the four contributing signals and their names;
   * the compromise rule  R_i(t) >= risk.
 
-Values the paper does NOT specify  -> [ASSUMPTION], isolated in
+Values the paper does NOT specify  -> , isolated in
 ``config/experiment.yaml``:
-  * the weights  w_rf, w1, w2, w3            (ASSUMPTIONS.md #9)
-  * the threshold  ``risk``                  (ASSUMPTIONS.md #9)
+  * the weights  w_rf, w1, w2, w3            (MODELING_NOTES.md #9)
+  * the threshold  ``risk``                  (MODELING_NOTES.md #9)
   * how the three delta_{i,*} telemetry signals are computed from raw stats
-    (ASSUMPTIONS.md #6)
+    (MODELING_NOTES.md #6)
 """
 from __future__ import annotations
 
@@ -29,16 +29,16 @@ from typing import Dict
 
 from common import config
 
-# --- weights & threshold : [ASSUMPTION], read from config ---------------------
+# --- weights & threshold : , read from config ---------------------
 _RISK_CFG = config.experiment().get("risk_engine", {})
 
-# Defaults live here (and are echoed into ASSUMPTIONS.md); config can override.
-W_RF = float(_RISK_CFG.get("w_rf", 0.70))     # [ASSUMPTION] RF prediction weight (dominant)
-W1 = float(_RISK_CFG.get("w1", 0.15))         # [ASSUMPTION] traffic volume spike weight
-W2 = float(_RISK_CFG.get("w2", 0.10))         # [ASSUMPTION] port-scan weight
-W3 = float(_RISK_CFG.get("w3", 0.05))         # [ASSUMPTION] auth-failure weight
-RISK_THRESHOLD = float(_RISK_CFG.get("risk_threshold", 60.0))            # [ASSUMPTION] x_i = 2 (Compromised)
-RISK_SUSPECTED_THRESHOLD = float(_RISK_CFG.get("risk_suspected_threshold", 35.0))  # [ASSUMPTION] x_i = 1 (Suspected)
+# Defaults live here (and are echoed into MODELING_NOTES.md); config can override.
+W_RF = float(_RISK_CFG.get("w_rf", 0.70))     # RF prediction weight (dominant)
+W1 = float(_RISK_CFG.get("w1", 0.15))         # traffic volume spike weight
+W2 = float(_RISK_CFG.get("w2", 0.10))         # port-scan weight
+W3 = float(_RISK_CFG.get("w3", 0.05))         # auth-failure weight
+RISK_THRESHOLD = float(_RISK_CFG.get("risk_threshold", 60.0))            # x_i = 2 (Compromised)
+RISK_SUSPECTED_THRESHOLD = float(_RISK_CFG.get("risk_suspected_threshold", 35.0))  # x_i = 1 (Suspected)
 
 
 def host_state(risk_score: float) -> int:
@@ -56,7 +56,7 @@ assert abs((W_RF + W1 + W2 + W3) - 1.0) < 1e-9, "Eq 4 weights must sum to 1 (ass
 class RiskSignals:
     """The three non-ML telemetry signals feeding Eq 4, each in [0, 1].
 
-    [ASSUMPTION -- ASSUMPTIONS.md #6] on how each is derived from raw telemetry:
+    on how each is derived from raw telemetry:
 
       delta1  volume spike : min(1, pps / attack_pps_mean)      -- a flow whose
               packet rate approaches the attack regime scores ~1.
@@ -92,14 +92,14 @@ def is_compromised(risk_score: float, threshold: float | None = None) -> bool:
 def derive_signals_from_flow(*, pps: float, distinct_dst: int, failed_auth: int) -> RiskSignals:
     """Reference derivation of the three signals (used by the simulation).
 
-    Caps are [ASSUMPTION] (ASSUMPTIONS.md #6):
+    Caps are (MODELING_NOTES.md #6):
       attack_pps_mean from config; scan_cap = 8 distinct destinations;
       auth_cap = 5 failed events.
     """
     exp = config.experiment()
-    attack_pps_mean = float(exp["attack_traffic"]["pps_mean"])   # [PAPER] 3.0
-    scan_cap = float(_RISK_CFG.get("scan_cap", 8.0))             # [ASSUMPTION]
-    auth_cap = float(_RISK_CFG.get("auth_cap", 5.0))             # [ASSUMPTION]
+    attack_pps_mean = float(exp["attack_traffic"]["pps_mean"])   # 3.0
+    scan_cap = float(_RISK_CFG.get("scan_cap", 8.0))             # 
+    auth_cap = float(_RISK_CFG.get("auth_cap", 5.0))             # 
     return RiskSignals(
         volume_spike=min(1.0, max(0.0, pps / attack_pps_mean)),
         port_scan=min(1.0, distinct_dst / scan_cap),

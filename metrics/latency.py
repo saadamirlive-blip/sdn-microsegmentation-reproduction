@@ -4,7 +4,7 @@
              installation on the OVS switches, averaged over mitigated attack flows.
 
 This is MEASURED from per-flow timestamps recorded by the simulation
-(``FlowOutcome.resp_latency_s``).  The paper's 2.30 s is a RESULT, never an input.
+(``FlowOutcome.resp_latency_s``).  Response latency is measured per flow, never assumed.
 """
 from __future__ import annotations
 

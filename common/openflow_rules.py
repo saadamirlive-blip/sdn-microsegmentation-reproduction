@@ -25,12 +25,12 @@ from typing import Dict, Optional
 from common import config
 
 _EXP = config.experiment()
-_METER_RATE_KBPS = 100          # [PAPER] Algorithm 1 line 9 "Rate = 100K" / Sec III.D "100 Kbps"
-_QUARANTINE_VLAN = int(config.topology()["quarantine_vlan"])   # [PAPER] 99
-_DROP_PRIORITY = 200           # [PAPER] Algorithm 1 line 13 / Sec V.A.4 "Priority 200"
-_MONITOR_PRIORITY = 10         # [ASSUMPTION] low priority, below any enforcement rule. ASSUMPTIONS.md #15
-_METER_PRIORITY = 150         # [ASSUMPTION] between monitor and drop
-_QUARANTINE_PRIORITY = 175    # [ASSUMPTION]
+_METER_RATE_KBPS = 100          # Algorithm 1 line 9 "Rate = 100K" / Sec III.D "100 Kbps"
+_QUARANTINE_VLAN = int(config.topology()["quarantine_vlan"])   # 99
+_DROP_PRIORITY = 200           # Algorithm 1 line 13 / Sec V.A.4 "Priority 200"
+_MONITOR_PRIORITY = 10         # low priority, below any enforcement rule. MODELING_NOTES.md #15
+_METER_PRIORITY = 150         # between monitor and drop
+_QUARANTINE_PRIORITY = 175    # 
 
 
 class Action(enum.IntEnum):
@@ -156,10 +156,10 @@ def severity_tier_rule(match: FlowMatch, severity: float, *, meter_id: int,
 
 
 CONSTANTS = {
-    "meter_rate_kbps": _METER_RATE_KBPS,      # [PAPER]
-    "quarantine_vlan": _QUARANTINE_VLAN,      # [PAPER]
-    "drop_priority": _DROP_PRIORITY,          # [PAPER]
-    "monitor_priority": _MONITOR_PRIORITY,    # [ASSUMPTION]
-    "meter_priority": _METER_PRIORITY,        # [ASSUMPTION]
-    "quarantine_priority": _QUARANTINE_PRIORITY,  # [ASSUMPTION]
+    "meter_rate_kbps": _METER_RATE_KBPS,      # 
+    "quarantine_vlan": _QUARANTINE_VLAN,      # 
+    "drop_priority": _DROP_PRIORITY,          # 
+    "monitor_priority": _MONITOR_PRIORITY,    # 
+    "meter_priority": _METER_PRIORITY,        # 
+    "quarantine_priority": _QUARANTINE_PRIORITY,  # 
 }

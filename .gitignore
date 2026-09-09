@@ -7,29 +7,19 @@ venv/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# Large / bulky generated artefacts -- regenerate with `python run_experiment.py`
+# Bulky generated artefacts -- regenerate with `python run_experiment.py`
 results/dataset_50k.csv
 results/logs/
 results/model/
-results/run_all_trials_summary.json
 results/testbed/
 
-# calibrated config set (SDN_CONFIG_SET=calibrated): keep the summary CSVs +
-# figures for review, drop the bulky bits (regenerate with
-# `python run_experiment.py --config-set calibrated`)
-results_calibrated/dataset_50k.csv
-results_calibrated/logs/
-results_calibrated/model/
-results_calibrated/run_all_trials_summary.json
-
-# A committed snapshot of the headline outputs IS kept for review:
-#   results/reproduction_comparison.csv  results/aggregate_results.csv
-#   results/raw_trial_results.csv        results/*.json  results/*.txt
-#   results/containment_by_vector.csv    results/latency_results.csv
-#   results/network_availability.csv     results/availability_timeline.csv
-#   results/false_containment.csv        results/feature_importance.csv
-#   results/confusion_matrix.csv         figures/*.png
-# (everything above this line stays out of git.)
+# A snapshot of the small result files IS committed for review:
+#   results/run_summary.json  results/aggregate_results.csv
+#   results/raw_trial_results.csv  results/*.json  results/*.txt
+#   results/containment_by_vector.csv  results/latency_results.csv
+#   results/network_availability.csv  results/availability_timeline.csv
+#   results/false_containment.csv  results/feature_importance.csv
+#   results/confusion_matrix.csv  figures/*.png
 
 # OS
 .DS_Store

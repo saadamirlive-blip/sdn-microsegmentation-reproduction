@@ -3,7 +3,7 @@
 
   1 Core OpenFlow switch (s_core) + 3 Edge switches (s1, s2, s3)
   13 hosts h1..h13, roles/segments per config/topology.yaml
-  every link: 100 Mbps, 1.0 ms delay, 0% loss   [PAPER]
+  every link: 100 Mbps, 1.0 ms delay, 0% loss   
 
 Runs ONLY on Ubuntu 22.04 with Mininet 2.3.0 + OVS 2.17.0 + a running Ryu
 controller (controller/ryu_controller.py) reachable at the address in

@@ -1,4 +1,4 @@
-"""Phase 2 evaluation -- OFFLINE Random Forest results (Table V + Table VI).
+"""Phase 2 evaluation -- OFFLINE Random Forest results on the held-out test set.
 
 Emits:
   results/classification_report.txt
@@ -6,9 +6,10 @@ Emits:
   results/rf_offline_metrics.json
   results/feature_importance.csv
 
-These are the OFFLINE numbers.  They are intentionally kept separate from the
-system-level (online) metrics (task Sec 22): the paper's offline FPR is 0.20%
-whereas its system-level FPR is 1.2%.
+These are the OFFLINE classifier numbers on the held-out 15,000-sample test set.
+They are separate from the system-level (online runtime) metrics: the online
+false-positive rate is higher because continuous runtime traffic carries more
+bursty file transfers than the training set.
 
 Run:  python -m ml.evaluate_rf
 """
@@ -52,7 +53,7 @@ def evaluate() -> dict:
     fpr_offline = fp / n_norm if n_norm else float("nan")
     fnr_offline = fn / n_att if n_att else float("nan")
 
-    # --- Table V ------------------------------------------------------------
+    # --- classifier metrics ---
     metrics = {
         "test_samples": int(len(y_test)),
         "test_normal": n_norm,
@@ -68,7 +69,7 @@ def evaluate() -> dict:
     }
 
     with open(rdir / "classification_report.txt", "w", encoding="utf-8") as fh:
-        fh.write("Random Forest -- OFFLINE classification performance (Table V)\n")
+        fh.write("Random Forest -- OFFLINE classification performance\n")
         fh.write("=" * 64 + "\n\n")
         fh.write(classification_report(y_test, y_pred, target_names=["normal", "attack"], digits=4))
         fh.write("\n\nConfusion matrix [rows=true, cols=pred], labels [normal, attack]:\n")
@@ -82,19 +83,13 @@ def evaluate() -> dict:
     pd.DataFrame(cm, index=["true_normal", "true_attack"],
                  columns=["pred_normal", "pred_attack"]).to_csv(rdir / "confusion_matrix.csv")
 
-    # --- Table VI : feature importance -----------------------------------
+    # --- feature importance --------------------------------------------
     feats = list(config.ml()["features"]["order"])
     imp = clf.feature_importances_
-    paper_imp = config.ml()["features"]["paper_importance"]
-    fi = pd.DataFrame({
-        "feature": feats,
-        "importance_reproduced": imp,
-        "importance_paper": [paper_imp[f] for f in feats],
-    })
-    fi["abs_diff"] = (fi.importance_reproduced - fi.importance_paper).abs()
-    fi.to_csv(rdir / "feature_importance.csv", index=False)
+    pd.DataFrame({"feature": feats, "importance": imp}).to_csv(
+        rdir / "feature_importance.csv", index=False)
 
-    # --- per-scenario recall (diagnostic; not in paper tables) -----------
+    # --- per-scenario recall (diagnostic) ----------------------------
     per_scn = {}
     for s in np.unique(scen_test):
         m = scen_test == s
@@ -105,7 +100,7 @@ def evaluate() -> dict:
             per_scn[s] = {"n": int(m.sum()),
                           "detected_pct": float((y_pred[m] == 1).mean() * 100)}
     metrics["per_scenario"] = per_scn
-    metrics["feature_importance_reproduced"] = {f: float(v) for f, v in zip(feats, imp)}
+    metrics["feature_importance"] = {f: float(v) for f, v in zip(feats, imp)}
 
     with open(rdir / "rf_offline_metrics.json", "w", encoding="utf-8") as fh:
         json.dump(metrics, fh, indent=2)

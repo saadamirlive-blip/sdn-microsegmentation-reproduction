@@ -14,7 +14,7 @@ the same `common/` code; only the data plane is real here.
 --------------------------------------------------------------------------------
 Ryu backend compatibility
 --------------------------------------------------------------------------------
-The paper specifies the Ryu SDN Framework (ASSUMPTIONS.md #1 pins v4.34, the last
+The paper specifies the Ryu SDN Framework (MODELING_NOTES.md #1 pins v4.34, the last
 release). Ryu 4.34 (Jan 2020) is unmaintained and no longer builds/installs on
 modern Python toolchains (setuptools >= 58 removed `easy_install.get_script_args`;
 `uv` rejects its `0.0.0` sdist metadata).
@@ -24,7 +24,7 @@ faithful path. Otherwise, when ``os_ken`` (the actively-maintained Ryu fork with
 a byte-compatible API, `pip install os-ken`) is present, the shim below aliases
 ``ryu.*`` -> ``os_ken.*`` so ``controller/*.py`` runs untouched.
 
-This is a DOCUMENTED SUBSTITUTION (recorded in ASSUMPTIONS.md #1), used only when
+This is a DOCUMENTED SUBSTITUTION (recorded in MODELING_NOTES.md #1), used only when
 Ryu itself cannot be installed. It changes the controller runtime, not the
 methodology: identical OpenFlow 1.3 messages, identical DME logic.
 ``controller.SDN_BACKEND`` reports which one is active.
@@ -71,4 +71,4 @@ def _install_backend() -> str | None:
 
 
 SDN_BACKEND = _install_backend()
-"""'ryu' (paper-faithful), 'os_ken' (documented substitution), or None (no backend installed)."""
+"""'ryu', 'os_ken' (drop-in fork), or None (no controller backend installed)."""

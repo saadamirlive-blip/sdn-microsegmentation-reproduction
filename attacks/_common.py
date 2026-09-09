@@ -12,11 +12,11 @@ try:
 except Exception:  # pragma: no cover
     HAVE_SCAPY = False
 
-ATTACK_PPS_MEAN, ATTACK_PPS_STD = 3.0, 0.5     # [PAPER] Sec IV.C.2 (normalised)
-ATTACK_BPS_MEAN, ATTACK_BPS_STD = 1.5, 0.3     # [PAPER]
+ATTACK_PPS_MEAN, ATTACK_PPS_STD = 3.0, 0.5     # Sec IV.C.2 (normalised)
+ATTACK_BPS_MEAN, ATTACK_BPS_STD = 1.5, 0.3     # 
 
 # scale the paper's normalised rate to a testbed packet rate
-PPS_SCALE = 4000.0     # [ASSUMPTION] renders "pps~N(3.0,0.5)" as a few thousand pps
+PPS_SCALE = 4000.0     # renders "pps~N(3.0,0.5)" as a few thousand pps
 
 
 def target_pps(rng: random.Random) -> float:

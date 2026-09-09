@@ -41,9 +41,9 @@ class SplitData:
 def split_and_scale(df: pd.DataFrame) -> SplitData:
     exp = config.experiment()
     ds = exp["dataset"]
-    test_size = float(ds["test_fraction"])                 # [PAPER] 0.30
-    stratify_flag = bool(ds["test_split_stratified"])      # [ASSUMPTION] True
-    random_state = int(exp["seeds"]["random_state"])       # [PAPER] 42
+    test_size = float(ds["test_fraction"])                 # 0.30
+    stratify_flag = bool(ds["test_split_stratified"])      # True
+    random_state = int(exp["seeds"]["random_state"])       # 42
 
     X = df[FEATURES].to_numpy(dtype=float)
     y = df["label"].to_numpy(dtype=int)

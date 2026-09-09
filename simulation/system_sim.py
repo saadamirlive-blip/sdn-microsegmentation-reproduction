@@ -27,21 +27,21 @@ from traffic.attack_traffic import (generate_attack_flows,
 from traffic.benign_traffic import generate_benign_flows
 
 _EXP = config.experiment()
-_POLL = float(_EXP["telemetry"]["polling_interval_s"])                     # [PAPER] 3.0
-_WINDOW = int(_EXP["operational_window"]["total_seconds"])                 # [PAPER] 300
-_ATTACK_STARTS = list(_EXP["operational_window"]["attack_start_times_s"])  # [PAPER] [60, 120]
-_BURST = float(_EXP["runtime_traffic"]["attack_burst_duration_s"])        # [ASSUMPTION] 60
-_N_BENIGN = int(_EXP["runtime_traffic"]["benign_flows_per_poll"])         # [ASSUMPTION]
-_N_ATTACK = int(_EXP["runtime_traffic"]["attack_flows_per_poll"])        # [ASSUMPTION]
+_POLL = float(_EXP["telemetry"]["polling_interval_s"])                     # 3.0
+_WINDOW = int(_EXP["operational_window"]["total_seconds"])                 # 300
+_ATTACK_STARTS = list(_EXP["operational_window"]["attack_start_times_s"])  # [60, 120]
+_BURST = float(_EXP["runtime_traffic"]["attack_burst_duration_s"])        # 60
+_N_BENIGN = int(_EXP["runtime_traffic"]["benign_flows_per_poll"])         # 
+_N_ATTACK = int(_EXP["runtime_traffic"]["attack_flows_per_poll"])        # 
 _LAT = _EXP["runtime_traffic"]["latency_model"]
 _PROBE_ENABLED = bool(_EXP["attack_vectors"]["horizontal_probe"]["enabled"])
 # weight of a rate-limited legitimate connection toward "unavailable"
-# (0.0 = paper-faithful config set; > 0 only in the calibrated overlay)
+# a rate-limited legit connection counts toward unavailability when > 0
 _RL_IMPAIR = float(_EXP.get("availability", {}).get("rate_limit_impairment_weight", 0.0))
 _TRANSIENT_FACTOR = float(_EXP.get("availability", {}).get("transient_degrade_factor", 0.35))
 # Algorithm 1 marks the HOST x_i=2 and enforcement follows the host. When this
 # is on, a benign flow on a Compromised host is quarantined too (host-level
-# collateral) -> FCR can exceed FPR as in Table VIII. 0/off in the paper set.
+# collateral). Off by default.
 _HOST_COLLATERAL = bool(_EXP.get("risk_engine", {}).get("host_collateral_on_compromise", False))
 
 
@@ -66,8 +66,8 @@ def _pipeline_latency(rng: np.random.Generator, action: Action) -> float:
     (the polling wait = t_poll - flow_init is added by the caller from real
     per-flow timestamps, so it is measured, not sampled twice):
 
-        extraction   ~ N(0.30, 0.08)      [ASSUMPTION] feature calc + RF inference ("< 2.3 s" Sec V.A.3)
-      + install(kind) ~ N(mu_kind, s_kind) [ASSUMPTION] OpenFlow FlowMod/MeterMod write (incl. 10-50 ms TCAM)
+        extraction   ~ N(0.30, 0.08)      feature calc + RF inference ("< 2.3 s" Sec V.A.3)
+      + install(kind) ~ N(mu_kind, s_kind) OpenFlow FlowMod/MeterMod write (incl. 10-50 ms TCAM)
     """
     ext = max(0.0, float(rng.normal(_LAT["extraction_time_s"]["mean"],
                                     _LAT["extraction_time_s"]["std"])))
@@ -143,7 +143,7 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
 
             # host-level collateral: a benign flow sharing a Compromised host is
             # swept up by the host quarantine even though the flow itself looked
-            # clean (Algorithm 1 marks the host, not the flow). Calibrated set only.
+            # clean (Algorithm 1 marks the host, not the flow). host-level collateral (config-gated).
             if (_HOST_COLLATERAL and not contained and f.meta["label"] == "benign"
                     and d.compromised):
                 contained = True
@@ -175,7 +175,7 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
             elif collateral and action_name == "RATE_LIMIT" and _RL_IMPAIR > 0:
                 # a legitimate business connection throttled to 100 Kbps is not
                 # "fully functional" -- weight it toward unavailability.
-                # [ASSUMPTION/CALIBRATION] weight is 0.0 in the paper config set.
+                # weight is 0.0 in the paper config set.
                 impaired_paths.add((d.src_host, d.dst_host))
 
             rec.flows.append(FlowOutcome(
@@ -194,7 +194,7 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
 
         # --- availability sample for this tick (Eq 8 / Fig 7) -----------------
         # persistent loss: legit paths quarantined/blocked this poll (+ weighted
-        # rate-limited paths when _RL_IMPAIR > 0, calibrated set only)
+        # rate-limited paths when _RL_IMPAIR > 0)
         persistent_down = len(down_paths) + _RL_IMPAIR * len(impaired_paths)
         # transient loss: un-contained attack burst saturates the attacker's
         # edge switch (s1); a fraction of the 156 paths transiting s1 degrade
@@ -204,7 +204,7 @@ def run_proposed_trial(trial_index: int, *, verbose: bool = False) -> TrialRecor
             s1_paths = sum(1 for (u, v) in topo.directed_host_pairs()
                            if "s1" in topo.path_switches(u, v))
             sat = min(1.0, uncontained_attack_this_poll / max(1, _N_ATTACK))
-            transient_down = int(round(_TRANSIENT_FACTOR * sat * s1_paths))  # [ASSUMPTION]
+            transient_down = int(round(_TRANSIENT_FACTOR * sat * s1_paths))  # 
 
         operational = max(0.0, total_paths - persistent_down - transient_down)
         rec.availability.append(PathAvailabilitySample(

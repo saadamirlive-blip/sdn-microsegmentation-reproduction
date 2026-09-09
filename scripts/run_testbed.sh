@@ -15,8 +15,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DURATION="${1:-300}"
-ATTACK1_AT=60         # [PAPER] Fig 6 attack initiation
-ATTACK2_AT=120        # [PAPER]
+ATTACK1_AT=60         # Fig 6 attack initiation
+ATTACK2_AT=120        # 
 PY="${PYTHON:-python3.10}"
 
 command -v mn >/dev/null || { echo "Mininet not found -- Ubuntu 22.04 testbed only"; exit 1; }

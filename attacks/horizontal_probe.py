@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse, socket, time
 from common import config
 
-PRIORITY_TARGETS = ["h2", "h5"]                 # [PAPER]
+PRIORITY_TARGETS = ["h2", "h5"]                 # 
 SCAN_PORTS = [22, 80, 135, 139, 443, 445, 1433, 3306, 3389, 8080]
 
 

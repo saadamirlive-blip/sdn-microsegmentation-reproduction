@@ -13,7 +13,7 @@ def test_full_pipeline_one_trial(tmp_path):
 
     clf, split, _ = train(save=True)
     off = evaluate()
-    assert off["accuracy"] > 0.95          # reproduces the paper's ~99.8%
+    assert off["accuracy"] > 0.95
     assert off["confusion"]["false_positive"] >= 0
 
     rec = run_proposed_trial(0)
@@ -21,9 +21,9 @@ def test_full_pipeline_one_trial(tmp_path):
     for v in (m.cr_pct, m.tresp_s, m.fpr_pct, m.fcr_pct, m.na_pct):
         assert math.isfinite(v)
     assert 80.0 <= m.cr_pct <= 100.0
-    assert 0.0 < m.tresp_s < 5.0           # Constraint 2
+    assert 0.0 < m.tresp_s < 5.0           # containment-latency constraint
     assert 90.0 <= m.na_pct <= 100.0
-    assert m.controller_load_final <= 0.80  # Constraint 3
+    assert m.controller_load_final <= 0.80  # controller-CPU constraint
 
 
 def test_seeding_is_reproducible():

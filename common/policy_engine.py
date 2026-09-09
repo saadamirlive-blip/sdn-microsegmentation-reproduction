@@ -17,7 +17,7 @@ Algorithm 1 (verbatim structure):
    19-22  for each switch s_m in S: PushOpenFlowFlowMod(s_m, R_OF)
    23  return R_OF, X(t+1)
 
-Key modelling decision [ASSUMPTION -- ASSUMPTIONS.md #6]:
+Key modelling decision :
   Eq 4 defines a *host* risk score R_i(t) ("host endpoint h_i is tracked using a
   discrete security state variable x_i(t)").  Line 5 is therefore evaluated
   ONCE PER SOURCE HOST per poll, aggregating that host's active flows:
@@ -29,7 +29,7 @@ Key modelling decision [ASSUMPTION -- ASSUMPTIONS.md #6]:
   action within that host still follows the critical / lateral / severity split.
 
 Reconciliation of Algorithm 1's "else -> drop" with the graded severity tiers
-(Sec V.A.4) is controlled by ``policy_mode`` -- see ASSUMPTIONS.md #11.
+(Sec V.A.4) is controlled by ``policy_mode`` -- see MODELING_NOTES.md #11.
 """
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ class FlowDecision:
     dst_host: str
     protocol: str
     p_attack: float                 # per-flow RF probability
-    severity: float                 # S_k := per-flow P_attack  [ASSUMPTION]
+    severity: float                 # S_k := per-flow P_attack  
     risk_score: float               # HOST R_i(t)  (Eq 4)
     compromised: bool               # HOST x_i(t) == 2
     is_critical: bool
@@ -146,7 +146,7 @@ def run_dmca(
     for host, idxs in by_host.items():
         pv = p_flow[idxs]
         # P_attack(h_i): blend of mean and max over the host's flows this poll
-        # [ASSUMPTION -- config risk_engine.host_p_attack_aggregation]
+        # 
         p_host = float(0.5 * np.mean(pv) + 0.5 * np.max(pv))
         sig = _host_signals([flows[i] for i in idxs], X[idxs])
         r_i = host_risk_score(p_host, sig)                    # Eq 4
@@ -219,5 +219,5 @@ POLICY_CONSTANTS = {
     "critical_hosts": sorted(_CRITICAL_HOSTS),
     "service_ports": sorted(_SERVICE_PORTS),
     "risk_score_scope": "per source host per poll (Eq 4 is a host score)",
-    "severity_definition": "S_k := P_attack(f_k)  [ASSUMPTION]",
+    "severity_definition": "S_k := P_attack(f_k)  ",
 }

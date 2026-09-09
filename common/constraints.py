@@ -18,7 +18,7 @@ MOOP (Eq 5-8):
       avail(C) = sum_{u!=v} I(Path(u,v) operational) / (N(N-1))       * 100     (Eq 8)
       lambda   = L_ctrl(t)                                                     (Eq 9)
 
-Note on C4 [ASSUMPTION -- ASSUMPTIONS.md #11]: the paper's Constraint 4 literally
+Note on C4 : the paper's Constraint 4 literally
 reads C_k = 3 (BLOCK) for critical flows, which contradicts Algorithm 1 line 9
 (critical flows -> meter rule, i.e. C_k = 1).  We follow Algorithm 1 (the
 "complete operational execution") and read C4 as "critical flows always receive
@@ -35,12 +35,12 @@ from common import config
 _C = config.experiment()["constraints"]
 _MOOP = config.experiment()["moop"]
 
-M_MAX = int(_C["tcam_capacity_Mmax"])                 # [PAPER-RANGE] 4000
-T_CONTAIN_MAX = float(_C["containment_latency_max_s"])  # [PAPER] 5.0
-L_CTRL_MAX = float(_C["controller_cpu_load_max"])     # [PAPER] 0.80
-L_INTERCEPT = float(_C["lctrl_intercept"])            # [PAPER] 0.246
-L_SLOPE = float(_C["lctrl_slope"])                    # [PAPER] 0.00454
-L_MAX = float(_C["lctrl_Lmax"])                       # [ASSUMPTION] 1.0
+M_MAX = int(_C["tcam_capacity_Mmax"])                 # 4000
+T_CONTAIN_MAX = float(_C["containment_latency_max_s"])  # 5.0
+L_CTRL_MAX = float(_C["controller_cpu_load_max"])     # 0.80
+L_INTERCEPT = float(_C["lctrl_intercept"])            # 0.246
+L_SLOPE = float(_C["lctrl_slope"])                    # 0.00454
+L_MAX = float(_C["lctrl_Lmax"])                       # 1.0
 
 ALPHA = float(_MOOP["alpha"]); BETA = float(_MOOP["beta"])
 GAMMA = float(_MOOP["gamma"]); DELTA = float(_MOOP["delta"])

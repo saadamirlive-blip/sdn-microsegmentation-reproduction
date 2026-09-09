@@ -35,12 +35,12 @@ def test_feature_vector_order_and_shape():
 
 
 # --- dataset ---------------------------------------------------------
-def test_dataset_balance_and_table_vii_shares():
+def test_dataset_balance_and_vector_shares():
     from ml.dataset_builder import build_dataset, summarize
     df = build_dataset()
     s = summarize(df)
     assert s.n_total == 50000 and s.n_benign == 25000 and s.n_malicious == 25000
-    # Table VII shares of the 25,000 malicious samples
+    # configured vector shares of the 25,000 malicious samples
     assert s.per_scenario["syn_flood"] == 8750
     assert s.per_scenario["udp_flood"] == 6250
     assert s.per_scenario["icmp_flood"] == 3750

@@ -6,7 +6,7 @@ Paper (Sec IV.D, Sec IV.G):
      to ensure full experimental reproducibility."
 
 The paper names only ``random_state=42``.  It does NOT state a per-trial seed
-policy for the 10 Monte Carlo runs.  [ASSUMPTION -- ASSUMPTIONS.md #12]:
+policy for the 10 Monte Carlo runs.  :
   trial t (t = 0 .. 9)  ->  seed = trial_seed_base + t   (i.e. 42, 43, ... 51).
 
 Every stochastic component (numpy, Python ``random``, and any per-trial RNG)
@@ -38,7 +38,7 @@ class SeedBundle:
 def global_seed(master: int) -> SeedBundle:
     """Seed the process-global RNGs (numpy legacy + Python ``random``)."""
     exp = config.experiment()
-    fixed_rs = int(exp["seeds"]["random_state"])          # [PAPER] 42
+    fixed_rs = int(exp["seeds"]["random_state"])          # 42
     random.seed(master)
     np.random.seed(master & 0xFFFFFFFF)
     os.environ["PYTHONHASHSEED"] = str(master)
@@ -53,7 +53,7 @@ def global_seed(master: int) -> SeedBundle:
 def dataset_seed() -> SeedBundle:
     """Seed for the one-off 50,000-sample dataset build (Phase 1)."""
     exp = config.experiment()
-    return global_seed(int(exp["seeds"]["numpy_seed"]))   # [ASSUMPTION] == 42
+    return global_seed(int(exp["seeds"]["numpy_seed"]))   # == 42
 
 
 def trial_seed(trial_index: int) -> SeedBundle:
@@ -62,7 +62,7 @@ def trial_seed(trial_index: int) -> SeedBundle:
     policy = exp["seeds"]["trial_seed_policy"]
     base = int(exp["seeds"]["trial_seed_base"])
     if policy == "base_plus_index":
-        master = base + int(trial_index)                  # [ASSUMPTION] ASSUMPTIONS.md #12
+        master = base + int(trial_index)                  # MODELING_NOTES.md #12
     else:  # pragma: no cover - only one policy defined
         raise ValueError(f"unknown trial_seed_policy: {policy!r}")
     return global_seed(master)

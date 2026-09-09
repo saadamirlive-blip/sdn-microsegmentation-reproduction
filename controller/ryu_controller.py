@@ -64,7 +64,7 @@ _MODEL_DIR = config.model_dir()
 
 
 class DynamicMicrosegmentationEngine(app_manager.RyuApp):
-    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]      # [PAPER] OpenFlow 1.3
+    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]      # OpenFlow 1.3
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -127,7 +127,7 @@ class DynamicMicrosegmentationEngine(app_manager.RyuApp):
         while True:
             for dp in list(self.datapaths.values()):
                 dp.send_msg(build_flow_stats_request(dp))
-            hub.sleep(POLLING_INTERVAL_S)          # [PAPER] 3.0 -- KEEP EXACT
+            hub.sleep(POLLING_INTERVAL_S)          # 3.0 -- KEEP EXACT
 
     @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def _stats_reply(self, ev):
