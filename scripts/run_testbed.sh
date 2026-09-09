@@ -19,14 +19,21 @@ ATTACK1_AT=60         # [PAPER] Fig 6 attack initiation
 ATTACK2_AT=120        # [PAPER]
 PY="${PYTHON:-python3.10}"
 
-command -v mn >/dev/null      || { echo "Mininet not found -- Ubuntu 22.04 testbed only"; exit 1; }
-command -v ryu-manager >/dev/null || { echo "ryu-manager not found (pip install -r requirements-testbed.txt)"; exit 1; }
+command -v mn >/dev/null || { echo "Mininet not found -- Ubuntu 22.04 testbed only"; exit 1; }
+
+# paper backend is ryu-manager; os-ken's osken-manager is the documented fallback
+# (Ryu 4.34 no longer installs on modern toolchains -- see controller/__init__.py)
+if command -v ryu-manager >/dev/null;  then MANAGER=ryu-manager
+elif command -v osken-manager >/dev/null; then MANAGER=osken-manager
+else echo "neither ryu-manager nor osken-manager found -- pip install -r requirements-testbed.txt"; exit 1
+fi
+echo "[0] SDN controller manager: $MANAGER"
 
 echo "[1] ensure trained model exists"
 [ -f results/model/model.pkl ] || $PY -m ml.train_rf
 
-echo "[2] start Ryu controller (OF1.3, 3.0s telemetry)"
-ryu-manager controller/ryu_controller.py >/tmp/ryu.log 2>&1 &
+echo "[2] start SDN controller (OF1.3, 3.0s telemetry) via $MANAGER"
+"$MANAGER" controller/ryu_controller.py >/tmp/ryu.log 2>&1 &
 RYU_PID=$!
 trap 'kill $RYU_PID 2>/dev/null || true; mn -c >/dev/null 2>&1 || true' EXIT
 sleep 3

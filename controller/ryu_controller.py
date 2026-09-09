@@ -14,10 +14,38 @@ Run:
 from __future__ import annotations
 
 import csv
+import importlib
+import importlib.util
 import os
+import sys
 import time
 
 import joblib
+
+# --- Ryu / os-ken backend shim (mirror of controller/__init__.py, inlined so it
+#     runs even when ryu-manager / osken-manager loads this file directly) ------
+try:  # pragma: no cover
+    import ryu  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover
+    from importlib.abc import Loader, MetaPathFinder
+
+    class _OsKenAsRyu(MetaPathFinder, Loader):
+        def find_spec(self, name, path=None, target=None):
+            if name == "ryu" or name.startswith("ryu."):
+                return importlib.util.spec_from_loader(name, self)
+            return None
+
+        def create_module(self, spec):
+            mod = importlib.import_module("os_ken" + spec.name[len("ryu"):])
+            sys.modules[spec.name] = mod
+            return mod
+
+        def exec_module(self, module):
+            pass
+
+    import os_ken  # noqa: F401  -- raises if neither backend is installed
+    if not any(isinstance(f, _OsKenAsRyu) for f in sys.meta_path):
+        sys.meta_path.insert(0, _OsKenAsRyu())
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event

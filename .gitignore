@@ -34,3 +34,4 @@ results_calibrated/run_all_trials_summary.json
 # OS
 .DS_Store
 Thumbs.db
+.github/

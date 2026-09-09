@@ -44,14 +44,24 @@ numbers (see `RESULTS.md` and §33 of the task brief).
 
 ---
 
-### 1. Ryu SDN Framework version
+### 1. Ryu SDN Framework version  (+ os-ken substitution)
 * **Missing:** Table III lists only *"Ryu SDN Framework (Python 3.10)"* — no version.
 * **Needed:** to pin the controller dependency and the OpenFlow 1.3 parser API.
-* **Choice:** `ryu==4.34` (the final Ryu release; the last that installs and runs
-  under a Python 3.10 runtime with `eventlet`).
+* **Choice:** `ryu==4.34` (the final Ryu release, Jan 2020).
+* **Substitution (documented):** Ryu 4.34 no longer *installs* on current
+  toolchains — `setuptools >= 58` removed `easy_install.get_script_args` (build
+  error) and `uv` rejects its `0.0.0` sdist metadata. When the real `ryu`
+  package is not importable, `controller/__init__.py` installs a meta-path shim
+  that aliases `ryu.*` → **`os_ken.*`** (os-ken = the maintained Ryu fork, `pip
+  install os-ken`, byte-compatible API). `controller.SDN_BACKEND` reports which
+  is live; `scripts/run_testbed.sh` uses `ryu-manager` if present else
+  `osken-manager`.
 * **Repro impact:** low. The controller uses only stable OF 1.3 constructs
-  (`OFPFlowMod`, `OFPMeterMod`, `OFPMultipartRequest`) present since Ryu 4.x.
-* **Replace:** set `environment.ryu` and the `controller` extra in `requirements.txt`.
+  (`OFPFlowMod`, `OFPMeterMod`, `OFPMultipartRequest`) that os-ken implements
+  identically; the DME logic is the shared `common/` code either way. Only the
+  controller *runtime* differs, not the methodology or the emitted messages.
+* **Replace:** to force real Ryu, follow *Option A* in `requirements-testbed.txt`
+  (old `setuptools` + `--no-build-isolation`); set `environment.ryu` accordingly.
 
 ### 2. Host IP addressing
 * **Missing:** the paper gives roles for h1–h13 but no addresses.

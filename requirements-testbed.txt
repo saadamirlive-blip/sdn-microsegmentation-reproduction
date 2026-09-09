@@ -6,12 +6,39 @@
 #   sudo apt-get install -y mininet openvswitch-switch openvswitch-common \
 #                           iperf3 hping3 python3.10-venv
 #   python3.10 -m venv .venv && . .venv/bin/activate
-#   pip install -r requirements.txt -r requirements-testbed.txt
+#   pip install -r requirements.txt              # (use pip, NOT `uv pip`, here)
+#   pip install -r requirements-testbed.txt
 #
-# Mininet 2.3.0 itself is installed from apt (package `mininet`) or from source
+# Mininet 2.3.0 itself comes from apt (package `mininet`) or source
 # (`git clone https://github.com/mininet/mininet && util/install.sh -n`), NOT pip.
 # -----------------------------------------------------------------------------
+#
+# SDN controller backend
+# ----------------------
+# The paper specifies Ryu (ASSUMPTIONS.md #1 pins v4.34, the final release).
+# Ryu 4.34 (Jan 2020) no longer installs on modern toolchains:
+#   * setuptools >= 58 removed `easy_install.get_script_args` -> build fails;
+#   * `uv` rejects Ryu's sdist ("metadata version 0.0.0").
+#
+# Option A -- real Ryu (paper-faithful), needs an old build chain, plain pip:
+#     pip install "setuptools==57.5.0" "wheel==0.40.0"
+#     pip install --no-build-isolation --no-deps ryu==4.34
+#     pip install "eventlet==0.30.2" "dnspython==1.16.0" "msgpack==1.0.5" \
+#                 netaddr oslo.config ovs Routes six "tinyrpc<1.1" WebOb
+#
+# Option B -- os-ken (RECOMMENDED fallback): the maintained Ryu fork, byte-
+# compatible API. `controller/__init__.py` aliases `ryu.*` -> `os_ken.*` when
+# Ryu is absent, so controller/*.py run unchanged. Documented substitution
+# (ASSUMPTIONS.md #1); identical OF 1.3 messages + DME logic.
+#     pip install os-ken
+#
+# -----------------------------------------------------------------------------
 
-ryu==4.34               # [ASSUMPTION -- ASSUMPTIONS.md #1]
-eventlet==0.30.2        # Ryu 4.34 needs an older eventlet on Python 3.10
+# --- Option B (default: works on any modern Python) ---
+os-ken>=2.10
 scapy==2.5.0            # [PAPER] Table III
+
+# --- Option A (uncomment to force real Ryu; run the two pip lines above first) ---
+# ryu==4.34             # [ASSUMPTION -- ASSUMPTIONS.md #1]
+# eventlet==0.30.2
+# dnspython==1.16.0

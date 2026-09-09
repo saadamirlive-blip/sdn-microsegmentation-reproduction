@@ -43,12 +43,15 @@ jobs:
           ovs-vsctl --version | head -1
           mn --version
 
-      - name: Python deps (paper pins + Ryu/Scapy)
+      - name: Python deps (paper pins + os-ken/Scapy)
         run: |
           python3.10 -m pip install --upgrade pip
           python3.10 -m pip install -r requirements.txt
-          python3.10 -m pip install -r requirements-testbed.txt || \
-            echo "::warning::Ryu/eventlet pin failed on py3.10 -- testbed run may not start."
+          # requirements-testbed.txt defaults to os-ken (the maintained Ryu fork;
+          # Ryu 4.34 no longer builds on modern toolchains). controller/__init__.py
+          # aliases ryu.* -> os_ken.* transparently.
+          python3.10 -m pip install -r requirements-testbed.txt
+          python3.10 -c "import controller; print('SDN backend:', controller.SDN_BACKEND)"
 
       - name: Train the model (needed by the controller)
         run: python3.10 -m ml.train_rf
