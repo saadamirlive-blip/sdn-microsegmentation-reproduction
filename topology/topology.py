@@ -72,6 +72,14 @@ def build_net(standalone: bool = False, switch_kind: str = "ovs"):
         #   lxbr : Linux bridge (needs `bridge-utils`; best for containers)
         #   ovs  : OVS userspace datapath (needs ovs-vswitchd running)
         if switch_kind == "lxbr":
+            # inside a container, bridged frames get pushed through iptables and
+            # Docker's FORWARD DROP policy eats them -- turn that off.
+            import subprocess
+            for knob in ("net.bridge.bridge-nf-call-iptables",
+                         "net.bridge.bridge-nf-call-ip6tables",
+                         "net.bridge.bridge-nf-call-arptables"):
+                subprocess.run(["sysctl", "-w", f"{knob}=0"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             switch_cls = LinuxBridge
         else:
             switch_cls = partial(OVSSwitch, failMode="standalone", datapath="user")
