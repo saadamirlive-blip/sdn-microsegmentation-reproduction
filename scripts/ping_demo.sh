@@ -29,8 +29,11 @@ echo "*** using $PYBIN ($("$PYBIN" -V 2>&1)) ***"
 # config/topology.yaml is read with PyYAML
 "$PYBIN" -c "import yaml" 2>/dev/null || sudo "$PYBIN" -m pip install --break-system-packages -q pyyaml
 
-# Linux-bridge switches need brctl; most container-friendly (no OVS kernel module)
-command -v brctl >/dev/null || { echo "installing bridge-utils ..."; sudo apt-get install -y -q bridge-utils; }
+# Linux-bridge switches need brctl; the pingall test needs the `ping` binary
+_need=()
+command -v brctl >/dev/null || _need+=(bridge-utils)
+command -v ping  >/dev/null || _need+=(iputils-ping)
+[ ${#_need[@]} -eq 0 ] || { echo "installing: ${_need[*]}"; sudo apt-get install -y -q "${_need[@]}"; }
 
 sudo mn -c >/dev/null 2>&1 || true
 trap 'sudo mn -c >/dev/null 2>&1 || true' EXIT
