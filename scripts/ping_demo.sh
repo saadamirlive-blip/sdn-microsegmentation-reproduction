@@ -29,13 +29,11 @@ echo "*** using $PYBIN ($("$PYBIN" -V 2>&1)) ***"
 # config/topology.yaml is read with PyYAML
 "$PYBIN" -c "import yaml" 2>/dev/null || sudo "$PYBIN" -m pip install --break-system-packages -q pyyaml
 
-# start Open vSwitch userspace daemons (Codespaces have no systemd auto-start)
-sudo ovs-vsctl show >/dev/null 2>&1 || \
-  sudo /usr/share/openvswitch/scripts/ovs-ctl --system-id=random start --no-ovs-vswitchd=no 2>/dev/null || \
-  sudo service openvswitch-switch start 2>/dev/null || true
+# Linux-bridge switches need brctl; most container-friendly (no OVS kernel module)
+command -v brctl >/dev/null || { echo "installing bridge-utils ..."; sudo apt-get install -y -q bridge-utils; }
 
 sudo mn -c >/dev/null 2>&1 || true
 trap 'sudo mn -c >/dev/null 2>&1 || true' EXIT
 
-echo "*** building topology + pingall ***"
-sudo "$PYBIN" topology/topology.py --standalone --test
+echo "*** building topology + pingall (Linux-bridge switches) ***"
+sudo "$PYBIN" topology/topology.py --standalone --switch lxbr --test

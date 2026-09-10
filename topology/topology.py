@@ -35,6 +35,7 @@ _MININET_ERR = None
 try:
     from mininet.net import Mininet
     from mininet.node import OVSSwitch, RemoteController
+    from mininet.nodelib import LinuxBridge
     from mininet.link import TCLink
     from mininet.log import info, setLogLevel
     from mininet.cli import CLI
@@ -60,15 +61,20 @@ def _require_mininet() -> None:
         "    but if that also fails, run the testbed in an Ubuntu VM or WSL2.")
 
 
-def build_net(standalone: bool = False):
+def build_net(standalone: bool = False, switch_kind: str = "ovs"):
     _require_mininet()
     T = config.topology()
     ctl = T["controller"]
     link = T["links"]
 
     if standalone:
-        # plain L2 learning switch, userspace datapath, no controller at all
-        switch_cls = partial(OVSSwitch, failMode="standalone", datapath="user")
+        # no controller / Ryu / ML model -- just L2 forwarding.
+        #   lxbr : Linux bridge (needs `bridge-utils`; best for containers)
+        #   ovs  : OVS userspace datapath (needs ovs-vswitchd running)
+        if switch_kind == "lxbr":
+            switch_cls = LinuxBridge
+        else:
+            switch_cls = partial(OVSSwitch, failMode="standalone", datapath="user")
         net = Mininet(controller=None, switch=switch_cls, link=TCLink, autoSetMacs=False)
         c0 = None
         of_proto = None
@@ -117,11 +123,14 @@ def main() -> None:
     ap.add_argument("--test", action="store_true", help="run pingall then exit")
     ap.add_argument("--standalone", action="store_true",
                     help="plain L2 switches, no controller / Ryu / ML model")
+    ap.add_argument("--switch", choices=["ovs", "lxbr"], default="ovs",
+                    help="standalone switch type: ovs (userspace datapath) or "
+                         "lxbr (Linux bridge -- best inside containers)")
     args = ap.parse_args()
 
     _require_mininet()
     setLogLevel("info")
-    net = build_net(standalone=args.standalone)
+    net = build_net(standalone=args.standalone, switch_kind=args.switch)
     try:
         if args.test:
             net.pingAll()
