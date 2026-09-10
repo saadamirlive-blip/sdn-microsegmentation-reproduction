@@ -165,16 +165,23 @@ in `config/experiment.yaml`.
 ### Show host-to-host connectivity (ping)
 
 ```bash
-sudo ./scripts/ping_demo.sh
+sudo bash scripts/ping_demo.sh
 ```
 
-Starts the controller, builds the 13-host topology, runs Mininet `pingall`
-(every host pings every other), prints the connectivity matrix, tears down.
+Builds the 13-host topology with Mininet's built-in L2 controller (no Ryu / no
+ML model needed), runs `pingall` (every host pings every other), prints the
+connectivity matrix, tears down. Expect `*** Results: 0% dropped (156/156 received)`.
 
-Interactive version — `sudo python3 topology/topology.py` drops you at a
-`mininet>` prompt where `pingall`, `pingallfull` (adds RTT), and
-`h4 ping -c 4 h2` work. The controller must be running in another terminal
-first, or all pings drop.
+Interactive:
+
+```bash
+sudo python3 topology/topology.py --standalone
+```
+
+drops you at a `mininet>` prompt — try `pingall`, `pingallfull` (adds RTT),
+`h4 ping -c 4 h2`. Use the **system** `python3` (Mininet's bindings aren't in the
+`.venv`). Drop `--standalone` to point at a running `controller/ryu_controller.py`
+instead of the built-in controller.
 
 ---
 
