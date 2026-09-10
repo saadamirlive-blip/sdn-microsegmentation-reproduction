@@ -162,6 +162,20 @@ in `config/experiment.yaml`.
 > machine these results were produced on. The code is complete; the unit-scale
 > defaults may need one adjustment on a real box.
 
+### Show host-to-host connectivity (ping)
+
+```bash
+sudo ./scripts/ping_demo.sh
+```
+
+Starts the controller, builds the 13-host topology, runs Mininet `pingall`
+(every host pings every other), prints the connectivity matrix, tears down.
+
+Interactive version — `sudo python3 topology/topology.py` drops you at a
+`mininet>` prompt where `pingall`, `pingallfull` (adds RTT), and
+`h4 ping -c 4 h2` work. The controller must be running in another terminal
+first, or all pings drop.
+
 ---
 
 ## 7. Outputs
