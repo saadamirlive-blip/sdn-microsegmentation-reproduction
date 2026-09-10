@@ -22,8 +22,9 @@ but this repository present.
 
 | Component | Runs on | Purpose |
 |---|---|---|
-| **Experiment pipeline** (`ml/`, `simulation/`, `metrics/`, `experiments/`, `plots/`) | any OS, Python 3.10 | builds the 50k dataset, trains the RF, runs the 10-trial closed-loop experiment, produces the CSVs and figures. **This produces `results/`.** |
-| **Mininet/Ryu data-plane testbed** (`topology/topology.py`, `controller/`, `traffic/iperf_generator.py`, `traffic/socket_generator.py`, `attacks/`) | Ubuntu 22.04 only | optional: the same experiment on a real OVS data plane, sharing the identical risk/policy logic (`common/`) |
+| **Experiment pipeline** (`ml/`, `simulation/`, `metrics/`, `experiments/`, `plots/`) | any OS, Python 3.10 (§3–5) | builds the 50k dataset, trains the RF, runs the 10-trial closed-loop experiment, produces the CSVs and figures. **This produces `results/`.** |
+| **Mininet topology + `ping`** (`topology/topology.py --standalone`) | any Linux incl. a Codespace (§6) | builds the real 13-host topology, checks connectivity |
+| **Full DME testbed** (`controller/`, `traffic/iperf_generator.py`, `attacks/`, `scripts/run_testbed.sh`) | real Ubuntu VM / WSL2 (§6b) | the same experiment on a real OVS data plane with the Ryu/os-ken controller |
 
 Both paths apply the same `common/risk_engine.py`, `common/policy_engine.py`
 (DMCA / Algorithm 1) and `common/openflow_rules.py` (meter 100 Kbps / VLAN 99 /
@@ -35,48 +36,37 @@ drop priority 200) — only the data plane differs.
 
 | | Version |
 |---|---|
-| Python | 3.10 |
+| Python | **3.10** (the pinned packages don't build on 3.12+) |
 | scikit-learn | 1.2.2 |
 | NumPy | 1.24.3 |
 | Pandas | 2.0.1 |
 | matplotlib, joblib, pyyaml, scipy | see `requirements.txt` |
-| *(testbed only)* Ubuntu 22.04, Mininet 2.3.0, Open vSwitch 2.17.0, Ryu (or os-ken), OpenFlow 1.3, Scapy 2.5.0, iperf3, hping3 | |
-
-The pinned packages need **Python 3.10** (they don't build on 3.12+). A newer
-Python for the runtime is fine once the venv is 3.10.
+| *(Mininet demo)* Mininet + `bridge-utils` + `iputils-ping` | any Linux, incl. a GitHub Codespace |
+| *(full testbed)* real Ubuntu (VM / WSL2), Open vSwitch kernel module, Ryu or os-ken, Scapy, hping3 | not a container |
 
 ---
 
-## 3. Install
+## 3. Install (any OS / GitHub Codespace)
 
-**If you already have Python 3.10** (`python3.10 --version` works):
-
-```bash
-python3.10 -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install -r requirements.txt pytest
-```
-
-**Otherwise** (e.g. a GitHub Codespace, whose default Python is too new) — use
-[`uv`](https://docs.astral.sh/uv/), which fetches Python 3.10 for you. Run each
-line on its own:
+Use [`uv`](https://docs.astral.sh/uv/) — it fetches a standalone Python 3.10 and
+prebuilt wheels, so nothing compiles and the system Python (3.12/3.14) is not
+used. **Paste this as one block:**
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
-uv venv --python 3.10 .venv
-source .venv/bin/activate
-uv pip install -r requirements.txt pytest
+curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH" && uv venv --python 3.10 .venv && source .venv/bin/activate && uv pip install -r requirements.txt pytest
 ```
 
-Then, in this and any later terminal:
+In every **new** terminal, re-activate:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Conda: `conda env create -f environment.yml && conda activate sdn-microseg`.
-Docker (Ubuntu 22.04, both paths): `docker build -t sdn-microseg . && docker run --rm -v "$PWD/results:/app/results" sdn-microseg python3 run_experiment.py`.
+> On Ubuntu 24.04 / GitHub Codespaces, `apt install python3.10-venv` does **not**
+> exist and `pip install -r requirements.txt` under Python 3.12+ fails to build
+> numpy — use the `uv` line above.
+
+Conda alternative: `conda env create -f environment.yml && conda activate sdn-microseg`.
 
 ---
 
@@ -120,68 +110,77 @@ python -m plots.make_all                     # (re)generate figures from results
 
 ---
 
-## 6. Real-packet run: the Mininet/Ryu testbed (Ubuntu 22.04)
+## 6. Mininet topology + `ping` between nodes
 
-This path sends **real packets** through an emulated OVS network — synthetic
-scenarios, real traffic — the same way the reference methodology does.
-Ubuntu 22.04 (a VM, WSL2, or a cloud box), with `sudo`.
+Builds the real 1-core / 3-edge / 13-host topology in Mininet using **Linux
+bridge** switches (no OpenFlow controller, no OVS kernel module) — this works
+inside a GitHub Codespace.
 
-```bash
-sudo apt-get update
-sudo apt-get install -y mininet openvswitch-switch iperf3 hping3 python3.10 python3.10-venv
-sudo service openvswitch-switch start
-```
+**One-time setup** (uses the *system* `python3`, not the `.venv` — Mininet's
+bindings live in `/usr/lib/python3/dist-packages`):
 
 ```bash
-python3.10 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt -r requirements-testbed.txt   # os-ken + scapy
+sudo apt-get update && sudo apt-get install -y mininet bridge-utils iputils-ping
 ```
+
+**Open the Mininet CLI:**
 
 ```bash
-python -m ml.train_rf                         # the controller loads results/model/model.pkl
-sudo env "PATH=$PATH" ./scripts/run_testbed.sh 300
+sudo /usr/bin/python3 topology/topology.py --standalone --switch lxbr
 ```
 
-`run_testbed.sh` does the whole run: starts the SDN controller
-(`ryu-manager`, or `osken-manager` when Ryu can't be installed), builds the
-1-core / 3-edge / 13-host topology, drives benign iperf3 + socket traffic and
-the six attack vectors + horizontal probe from **h4**, logs a telemetry +
-decision row every 3 s to `results/testbed/telemetry_<ts>.csv`, and finally runs:
+You land at `mininet>`. Useful commands:
 
-```bash
-python -m experiments.metrics_from_testbed    # -> results/testbed/metrics_summary.json
+```
+nodes             # h1..h13, s_core, s1..s3
+dump              # every node's IP (h1=10.0.0.1 ... h13=10.0.0.13)
+net               # all links
+pingall           # full 13x13 reachability -> "0% dropped (156/156 received)"
+pingallfull       # same, with RTT min/avg/max
+h4 ping -c 4 h2   # attacker h4 -> HR server h2
+h1 ifconfig
+exit              # quit and tear down
 ```
 
-which turns that telemetry into the same five metrics (CR / T_resp / FPR / FCR /
-NA). On the **first** run, open `results/testbed/telemetry_*.csv` and check the
-`pps` column: benign rows should be near `0.2`, attack rows near `3.0`. If
-they're off by a constant factor, adjust `testbed.pps_scale` / `testbed.bps_scale`
-in `config/experiment.yaml`.
-
-> Note: this path is Linux-only and has not been executed from the Windows
-> machine these results were produced on. The code is complete; the unit-scale
-> defaults may need one adjustment on a real box.
-
-### Show host-to-host connectivity (ping)
+**One-shot connectivity test** (build → `pingall` → tear down):
 
 ```bash
 sudo bash scripts/ping_demo.sh
 ```
 
-Builds the 13-host topology with Mininet's built-in L2 controller (no Ryu / no
-ML model needed), runs `pingall` (every host pings every other), prints the
-connectivity matrix, tears down. Expect `*** Results: 0% dropped (156/156 received)`.
-
-Interactive:
+**If `pingall` shows `X` everywhere** (100% dropped) inside a container, the
+Linux bridge is being filtered by iptables. The topology script disables the
+`net.bridge.bridge-nf-call-*` sysctls automatically; if it still fails, also run:
 
 ```bash
-sudo python3 topology/topology.py --standalone
+sudo iptables -P FORWARD ACCEPT
 ```
 
-drops you at a `mininet>` prompt — try `pingall`, `pingallfull` (adds RTT),
-`h4 ping -c 4 h2`. Use the **system** `python3` (Mininet's bindings aren't in the
-`.venv`). Drop `--standalone` to point at a running `controller/ryu_controller.py`
-instead of the built-in controller.
+then re-run `pingall`.
+
+### 6b. Full real-packet DME testbed (real Ubuntu, not a container)
+
+Sends real packets through OVS with the Ryu/os-ken controller, ML inference and
+live OpenFlow containment. Needs the **`openvswitch` kernel module**, so it
+requires a real Ubuntu host (VM or WSL2), not a Codespace.
+
+```bash
+sudo apt-get install -y mininet openvswitch-switch iperf3 hping3
+sudo systemctl start openvswitch-switch || sudo /usr/share/openvswitch/scripts/ovs-ctl start
+pip install -r requirements-testbed.txt          # os-ken + scapy (inside the .venv)
+python -m ml.train_rf
+sudo env "PATH=$PATH" bash scripts/run_testbed.sh 300
+```
+
+`run_testbed.sh` starts the controller, builds the topology, drives benign
+iperf3/socket traffic + the six attack vectors + horizontal probe from **h4**,
+logs `results/testbed/telemetry_<ts>.csv` every 3 s, then runs
+`python -m experiments.metrics_from_testbed` → `results/testbed/metrics_summary.json`
+(the same CR / T_resp / FPR / FCR / NA, measured from real packets).
+
+On the first run, check the `pps` column of the telemetry CSV: benign rows
+should sit near `0.2`, attack rows near `3.0`; if off by a constant factor,
+adjust `testbed.pps_scale` / `testbed.bps_scale` in `config/experiment.yaml`.
 
 ---
 
@@ -227,6 +226,7 @@ methodology does not pin down. `REPRODUCIBILITY.md` covers seeds and determinism
 ## 9. Tests
 
 ```bash
-pip install pytest
 pytest -q
 ```
+
+(22 tests; `pytest` is installed by the §3 `uv pip install` line.)
